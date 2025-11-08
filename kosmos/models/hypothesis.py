@@ -76,6 +76,12 @@ class Hypothesis(BaseModel):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     generated_by: str = Field(default="hypothesis_generator")
 
+    # Evolution tracking (Phase 7)
+    parent_hypothesis_id: Optional[str] = Field(None, description="ID of parent hypothesis (if refined/spawned)")
+    generation: int = Field(default=1, ge=1, description="Generation number (1 = original, 2+ = refined)")
+    refinement_count: int = Field(default=0, ge=0, description="Number of times this hypothesis was refined")
+    evolution_history: List[Dict[str, Any]] = Field(default_factory=list, description="History of refinements and results")
+
     @field_validator('statement')
     @classmethod
     def validate_statement(cls, v: str) -> str:
@@ -128,6 +134,10 @@ class Hypothesis(BaseModel):
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
             "generated_by": self.generated_by,
+            "parent_hypothesis_id": self.parent_hypothesis_id,
+            "generation": self.generation,
+            "refinement_count": self.refinement_count,
+            "evolution_history": self.evolution_history,
         }
 
     def is_testable(self, threshold: float = 0.3) -> bool:
