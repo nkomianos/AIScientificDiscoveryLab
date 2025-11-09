@@ -1,0 +1,3 @@
+[submodule "kosmos-figures"]
+	path = kosmos-figures
+	url = https://github.com/EdisonScientific/kosmos-figures
