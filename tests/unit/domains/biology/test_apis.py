@@ -95,19 +95,42 @@ class TestGWASCatalogClient:
 
     def test_get_variant_success(self, mock_httpx_client):
         """Test successful variant retrieval."""
-        mock_httpx_client.json.return_value = {
-            "rsId": "rs7903146",
-            "chromosomeName": "10",
-            "chromosomePosition": 114758349,
-            "pValue": 1.2e-10
+        # Setup two responses: one for SNP, one for associations
+        snp_response = Mock()
+        snp_response.status_code = 200
+        snp_response.json.return_value = {
+            "_embedded": {
+                "singleNucleotidePolymorphisms": [{
+                    "rsId": "rs7903146",
+                    "chromosomeName": "10",
+                    "chromosomePosition": 114758349
+                }]
+            }
         }
+        snp_response.raise_for_status = Mock()
+
+        assoc_response = Mock()
+        assoc_response.status_code = 200
+        assoc_response.json.return_value = {
+            "_embedded": {
+                "associations": [{
+                    "pvalue": 1.2e-10,
+                    "betaNum": 0.34,
+                    "traitName": "Type 2 diabetes",
+                    "sampleSize": 150000
+                }]
+            }
+        }
+
+        mock_httpx_client.get.side_effect = [snp_response, assoc_response]
 
         with patch('httpx.Client', return_value=mock_httpx_client):
             client = GWASCatalogClient()
             result = client.get_variant("rs7903146")
 
             assert result is not None
-            assert "rsId" in result or result is not None
+            assert hasattr(result, 'snp_id')
+            assert result.snp_id == "rs7903146"
 
     def test_search_by_gene(self, mock_httpx_client):
         """Test searching variants by gene."""
@@ -162,7 +185,7 @@ class TestGTExClient:
 
         with patch('httpx.Client', return_value=mock_httpx_client):
             client = GTExClient()
-            result = client.get_eqtl("chr10_114758349_C_T_b38")
+            result = client.get_eqtl("chr10_114758349_C_T_b38", gene_id="ENSG00000148737")
 
             assert result is not None
 
@@ -172,7 +195,7 @@ class TestGTExClient:
 
         with patch('httpx.Client', return_value=mock_httpx_client):
             client = GTExClient()
-            result = client.get_eqtl("chr10_114758349_C_T_b38", tissue="Pancreas")
+            result = client.get_eqtl("chr10_114758349_C_T_b38", gene_id="ENSG00000148737", tissue="Pancreas")
 
             assert result is not None
 
@@ -192,7 +215,7 @@ class TestGTExClient:
 
         with patch('httpx.Client', return_value=mock_httpx_client):
             client = GTExClient()
-            result = client.get_eqtl("chr10_114758349_C_T_b38")
+            result = client.get_eqtl("chr10_114758349_C_T_b38", gene_id="ENSG00000148737")
 
             assert result is None
 
@@ -219,7 +242,7 @@ class TestENCODEClient:
 
         with patch('httpx.Client', return_value=mock_httpx_client):
             client = ENCODEClient()
-            result = client.search_experiments(assay="ATAC-seq")
+            result = client.search_experiments(assay_type="ATAC-seq", biosample="pancreas")
 
             assert result is not None
             assert "@graph" in result or isinstance(result, list)
@@ -230,7 +253,7 @@ class TestENCODEClient:
 
         with patch('httpx.Client', return_value=mock_httpx_client):
             client = ENCODEClient()
-            result = client.search_experiments(assay="ChIP-seq")
+            result = client.search_experiments(assay_type="ChIP-seq", biosample="liver")
 
             assert result is not None
 
@@ -240,7 +263,7 @@ class TestENCODEClient:
 
         with patch('httpx.Client', return_value=mock_httpx_client):
             client = ENCODEClient()
-            result = client.search_experiments(biosample="liver")
+            result = client.search_experiments(assay_type="ATAC-seq", biosample="liver")
 
             assert result is not None
 
@@ -250,7 +273,7 @@ class TestENCODEClient:
 
         with patch('httpx.Client', return_value=mock_httpx_client):
             client = ENCODEClient()
-            result = client.search_experiments()
+            result = client.search_experiments(assay_type="ATAC-seq", biosample="liver")
 
             assert result is None
 
@@ -331,7 +354,7 @@ class TestEnsemblClient:
 
         with patch('httpx.Client', return_value=mock_httpx_client):
             client = EnsemblClient()
-            result = client.get_variant_consequences("10", 114758349, "C", "T")
+            result = client.get_variant_consequences("rs699")
 
             assert result is not None
 
@@ -364,7 +387,7 @@ class TestEnsemblClient:
 
         with patch('httpx.Client', return_value=mock_httpx_client):
             client = EnsemblClient()
-            result = client.get_variant_consequences("10", 114758349, "C", "T")
+            result = client.get_variant_consequences("rs699")
 
             assert result is None
 

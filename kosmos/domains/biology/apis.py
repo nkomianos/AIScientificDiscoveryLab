@@ -284,6 +284,38 @@ class GWASCatalogClient:
             logger.error(f"GWAS Catalog error for {snp_id}: {e}")
             return None
 
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
+    def search_by_gene(self, gene_name: str) -> Optional[Dict[str, Any]]:
+        """
+        Search for GWAS variants associated with a gene.
+
+        Args:
+            gene_name: Gene symbol (e.g., 'TCF7L2')
+
+        Returns:
+            Dictionary with associations or None
+        """
+        try:
+            url = f"{self.BASE_URL}/efoTraits/search/findByEfoTrait"
+            # Alternative: search by gene name in associations
+            url = f"{self.BASE_URL}/singleNucleotidePolymorphisms/search/findByGene"
+            params = {'geneName': gene_name}
+
+            response = self.client.get(
+                url,
+                params=params,
+                headers={'Accept': 'application/json'}
+            )
+
+            if response.status_code == 200:
+                return response.json()
+
+            return None
+
+        except Exception as e:
+            logger.error(f"GWAS gene search error for {gene_name}: {e}")
+            return None
+
     def close(self):
         """Close HTTP client."""
         self.client.close()
@@ -341,6 +373,35 @@ class GTExClient:
 
         except Exception as e:
             logger.error(f"GTEx eQTL error: {e}")
+            return None
+
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
+    def get_gene_expression(self, gene_id: str, tissue: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """
+        Get gene expression data across tissues.
+
+        Args:
+            gene_id: Gene symbol or Ensembl ID (e.g., 'TCF7L2', 'ENSG00000148737')
+            tissue: Optional tissue filter
+
+        Returns:
+            Dictionary with gene expression data or None
+        """
+        try:
+            url = f"{self.BASE_URL}/expression/geneExpression"
+            params = {'gencodeId': gene_id}
+            if tissue:
+                params['tissueSiteDetailId'] = tissue
+
+            response = self.client.get(url, params=params)
+
+            if response.status_code == 200:
+                return response.json()
+
+            return None
+
+        except Exception as e:
+            logger.error(f"GTEx gene expression error for {gene_id}: {e}")
             return None
 
     def close(self):
@@ -495,6 +556,61 @@ class EnsemblClient:
             logger.error(f"Ensembl VEP error for {variant_id}: {e}")
             return None
 
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
+    def get_vep_annotation(self, variant: str, species: str = "human") -> Optional[Dict[str, Any]]:
+        """
+        Get VEP (Variant Effect Predictor) annotation for a variant.
+
+        Args:
+            variant: Variant in format "chr:pos:ref:alt" or "rsID"
+            species: Species name (default: "human")
+
+        Returns:
+            VEP annotation dict or None
+        """
+        try:
+            # VEP region endpoint: /vep/{species}/region/{region}
+            url = f"{self.BASE_URL}/vep/{species}/region/{variant}"
+            headers = {'Content-Type': 'application/json'}
+
+            response = self.client.get(url, headers=headers)
+
+            if response.status_code == 200:
+                return response.json()
+
+            return None
+
+        except Exception as e:
+            logger.error(f"Ensembl VEP annotation error for {variant}: {e}")
+            return None
+
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
+    def get_gene(self, gene_symbol: str, species: str = "human") -> Optional[Dict[str, Any]]:
+        """
+        Look up gene by symbol.
+
+        Args:
+            gene_symbol: Gene symbol (e.g., 'TCF7L2')
+            species: Species name (default: "human")
+
+        Returns:
+            Gene information dict or None
+        """
+        try:
+            url = f"{self.BASE_URL}/lookup/symbol/{species}/{gene_symbol}"
+            headers = {'Content-Type': 'application/json'}
+
+            response = self.client.get(url, headers=headers)
+
+            if response.status_code == 200:
+                return response.json()
+
+            return None
+
+        except Exception as e:
+            logger.error(f"Ensembl gene lookup error for {gene_symbol}: {e}")
+            return None
+
     def close(self):
         """Close HTTP client."""
         self.client.close()
@@ -524,6 +640,21 @@ class HMDBClient:
         or web scraping approach.
         """
         logger.warning("HMDB API is limited. Consider using KEGG or local database.")
+        return None
+
+    def get_metabolite(self, hmdb_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get metabolite by HMDB ID.
+
+        Args:
+            hmdb_id: HMDB identifier (e.g., 'HMDB0000001')
+
+        Returns:
+            Metabolite information or None
+
+        Note: HMDB API is limited. This is a placeholder for future implementation.
+        """
+        logger.warning(f"HMDB API implementation pending for {hmdb_id}. Consider using KEGG or local database.")
         return None
 
     def close(self):
@@ -604,6 +735,35 @@ class UniProtClient:
             logger.error(f"UniProt error for {uniprot_id}: {e}")
             return None
 
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
+    def search_by_gene(self, gene_name: str) -> Optional[Dict[str, Any]]:
+        """
+        Search proteins by gene name.
+
+        Args:
+            gene_name: Gene symbol (e.g., 'TP53')
+
+        Returns:
+            Search results dict or None
+        """
+        try:
+            url = f"{self.BASE_URL}/uniprotkb/search"
+            params = {
+                'query': f'gene:{gene_name}',
+                'format': 'json',
+                'size': 10
+            }
+            response = self.client.get(url, params=params)
+
+            if response.status_code == 200:
+                return response.json()
+
+            return None
+
+        except Exception as e:
+            logger.error(f"UniProt gene search error for {gene_name}: {e}")
+            return None
+
     def close(self):
         """Close HTTP client."""
         self.client.close()
@@ -641,6 +801,51 @@ class PDBClient:
 
         except Exception as e:
             logger.error(f"PDB error for {pdb_id}: {e}")
+            return None
+
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
+    def search_structures(self, query: str) -> Optional[Dict[str, Any]]:
+        """
+        Search protein structures by query.
+
+        Args:
+            query: Search query (protein name, gene, organism, etc.)
+
+        Returns:
+            Search results dict or None
+        """
+        try:
+            # Use RCSB search API
+            search_url = "https://search.rcsb.org/rcsbsearch/v2/query"
+            search_query = {
+                "query": {
+                    "type": "terminal",
+                    "service": "text",
+                    "parameters": {
+                        "value": query
+                    }
+                },
+                "return_type": "entry",
+                "request_options": {
+                    "results_verbosity": "minimal",
+                    "return_all_hits": False,
+                    "results_content_type": ["experimental"]
+                }
+            }
+
+            response = self.client.post(
+                search_url,
+                json=search_query,
+                headers={'Content-Type': 'application/json'}
+            )
+
+            if response.status_code == 200:
+                return response.json()
+
+            return None
+
+        except Exception as e:
+            logger.error(f"PDB search error for '{query}': {e}")
             return None
 
     def close(self):
