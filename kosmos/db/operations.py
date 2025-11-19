@@ -16,7 +16,7 @@ from kosmos.db.models import (
     Experiment, Hypothesis, Result, Paper, AgentRecord, ResearchSession,
     ExperimentStatus, HypothesisStatus
 )
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 import time
 
@@ -162,7 +162,7 @@ def update_hypothesis_status(
         raise ValueError(f"Hypothesis {hypothesis_id} not found")
 
     hypothesis.status = status
-    hypothesis.updated_at = datetime.utcnow()
+    hypothesis.updated_at = datetime.now(timezone.utc)
     session.commit()
     session.refresh(hypothesis)
 
@@ -294,9 +294,9 @@ def update_experiment_status(
 
     experiment.status = status
     if status == ExperimentStatus.RUNNING and not experiment.started_at:
-        experiment.started_at = datetime.utcnow()
+        experiment.started_at = datetime.now(timezone.utc)
     elif status in [ExperimentStatus.COMPLETED, ExperimentStatus.FAILED]:
-        experiment.completed_at = datetime.utcnow()
+        experiment.completed_at = datetime.now(timezone.utc)
 
     if error_message:
         experiment.error_message = error_message
@@ -492,12 +492,12 @@ def update_agent_record(
     if status:
         agent.status = status
         if status == "stopped":
-            agent.stopped_at = datetime.utcnow()
+            agent.stopped_at = datetime.now(timezone.utc)
 
     if state_data is not None:
         agent.state_data = state_data
 
-    agent.updated_at = datetime.utcnow()
+    agent.updated_at = datetime.now(timezone.utc)
     session.commit()
     session.refresh(agent)
 
@@ -556,7 +556,7 @@ def update_research_session(
     if status:
         research_session.status = status
         if status == "completed":
-            research_session.completed_at = datetime.utcnow()
+            research_session.completed_at = datetime.now(timezone.utc)
 
     if iteration is not None:
         research_session.iteration = iteration
@@ -565,7 +565,7 @@ def update_research_session(
     if experiments_completed is not None:
         research_session.experiments_completed = experiments_completed
 
-    research_session.updated_at = datetime.utcnow()
+    research_session.updated_at = datetime.now(timezone.utc)
     db_session.commit()
     db_session.refresh(research_session)
 

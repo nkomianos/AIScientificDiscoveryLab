@@ -8,7 +8,7 @@ Uses message-based async coordination with all specialized agents.
 """
 
 from typing import Dict, Any, Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 import asyncio
 import threading
@@ -772,7 +772,7 @@ class ResearchDirectorAgent(BaseAgent):
         self.pending_requests[message.id] = {
             "agent": "HypothesisGeneratorAgent",
             "action": action,
-            "timestamp": datetime.utcnow()
+            "timestamp": datetime.now(timezone.utc)
         }
 
         logger.debug(f"Sent {action} request to HypothesisGeneratorAgent")
@@ -801,7 +801,7 @@ class ResearchDirectorAgent(BaseAgent):
         self.pending_requests[message.id] = {
             "agent": "ExperimentDesignerAgent",
             "hypothesis_id": hypothesis_id,
-            "timestamp": datetime.utcnow()
+            "timestamp": datetime.now(timezone.utc)
         }
 
         logger.debug(f"Sent design request to ExperimentDesignerAgent for hypothesis {hypothesis_id}")
@@ -830,7 +830,7 @@ class ResearchDirectorAgent(BaseAgent):
         self.pending_requests[message.id] = {
             "agent": "Executor",
             "protocol_id": protocol_id,
-            "timestamp": datetime.utcnow()
+            "timestamp": datetime.now(timezone.utc)
         }
 
         logger.debug(f"Sent execution request to Executor for protocol {protocol_id}")
@@ -861,7 +861,7 @@ class ResearchDirectorAgent(BaseAgent):
         self.pending_requests[message.id] = {
             "agent": "DataAnalystAgent",
             "result_id": result_id,
-            "timestamp": datetime.utcnow()
+            "timestamp": datetime.now(timezone.utc)
         }
 
         logger.debug(f"Sent interpretation request to DataAnalystAgent for result {result_id}")
@@ -893,7 +893,7 @@ class ResearchDirectorAgent(BaseAgent):
         self.pending_requests[message.id] = {
             "agent": "HypothesisRefiner",
             "hypothesis_id": hypothesis_id,
-            "timestamp": datetime.utcnow()
+            "timestamp": datetime.now(timezone.utc)
         }
 
         logger.debug(f"Sent {action} request to HypothesisRefiner for hypothesis {hypothesis_id}")
@@ -926,7 +926,7 @@ class ResearchDirectorAgent(BaseAgent):
 
         self.pending_requests[message.id] = {
             "agent": "ConvergenceDetector",
-            "timestamp": datetime.utcnow()
+            "timestamp": datetime.now(timezone.utc)
         }
 
         logger.debug("Sent convergence check request to ConvergenceDetector")
@@ -1261,6 +1261,27 @@ Provide a structured, actionable plan in 2-3 paragraphs.
             # Default: generate hypotheses
             return NextAction.GENERATE_HYPOTHESIS
 
+    def _run_async(self, coro):
+        """
+        Helper to run async code from sync context, handling event loops correctly.
+        """
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            # We are in a running loop. We cannot use asyncio.run() or loop.run_until_complete()
+            # as they would block the loop. We also cannot block on a Future.
+            # We must run the coroutine in a separate thread to avoid blocking the loop.
+            from concurrent.futures import ThreadPoolExecutor
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(asyncio.run, coro)
+                return future.result()
+        else:
+            # No running loop, safe to use asyncio.run
+            return asyncio.run(coro)
+
     def _execute_next_action(self, action: NextAction):
         """
         Execute the decided next action.
@@ -1288,21 +1309,9 @@ Provide a structured, actionable plan in 2-3 paragraphs.
                     hypothesis_batch = untested[:batch_size]
 
                     try:
-                        # Run async evaluation - handle both sync and async contexts
-                        try:
-                            loop = asyncio.get_running_loop()
-                            # Already in async context - use run_coroutine_threadsafe
-                            import concurrent.futures
-                            future = asyncio.run_coroutine_threadsafe(
-                                self.evaluate_hypotheses_concurrently(hypothesis_batch),
-                                loop
-                            )
-                            evaluations = future.result()
-                        except RuntimeError:
-                            # No running loop - safe to use asyncio.run
-                            evaluations = asyncio.run(
-                                self.evaluate_hypotheses_concurrently(hypothesis_batch)
-                            )
+                        evaluations = self._run_async(
+                            self.evaluate_hypotheses_concurrently(hypothesis_batch)
+                        )
 
                         # Process best candidate(s)
                         for eval_result in evaluations:
@@ -1355,21 +1364,9 @@ Provide a structured, actionable plan in 2-3 paragraphs.
                     result_batch = results[-batch_size:]  # Most recent results
 
                     try:
-                        # Run async analysis - handle both sync and async contexts
-                        try:
-                            loop = asyncio.get_running_loop()
-                            # Already in async context - use run_coroutine_threadsafe
-                            import concurrent.futures
-                            future = asyncio.run_coroutine_threadsafe(
-                                self.analyze_results_concurrently(result_batch),
-                                loop
-                            )
-                            analyses = future.result()
-                        except RuntimeError:
-                            # No running loop - safe to use asyncio.run
-                            analyses = asyncio.run(
-                                self.analyze_results_concurrently(result_batch)
-                            )
+                        analyses = self._run_async(
+                            self.analyze_results_concurrently(result_batch)
+                        )
 
                         # Process analyses and update hypotheses
                         for analysis in analyses:

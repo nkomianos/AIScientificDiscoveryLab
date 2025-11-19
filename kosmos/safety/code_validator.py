@@ -239,16 +239,31 @@ class CodeValidator:
         return violations
 
     def _check_dangerous_imports(self, code: str) -> List[SafetyViolation]:
-        """Check for dangerous module imports."""
+        """Check for dangerous module imports using AST."""
         violations = []
-        for module in self.DANGEROUS_MODULES:
-            if f"import {module}" in code or f"from {module}" in code:
-                violations.append(SafetyViolation(
-                    type=ViolationType.DANGEROUS_CODE,
-                    severity=RiskLevel.CRITICAL,
-                    message=f"Dangerous import detected: {module}",
-                    details={"module": module}
-                ))
+        try:
+            tree = ast.parse(code)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    for alias in node.names:
+                        if alias.name in self.DANGEROUS_MODULES:
+                            violations.append(SafetyViolation(
+                                type=ViolationType.DANGEROUS_CODE,
+                                severity=RiskLevel.CRITICAL,
+                                message=f"Dangerous import detected: {alias.name}",
+                                details={"module": alias.name}
+                            ))
+                elif isinstance(node, ast.ImportFrom):
+                    if node.module in self.DANGEROUS_MODULES:
+                        violations.append(SafetyViolation(
+                            type=ViolationType.DANGEROUS_CODE,
+                            severity=RiskLevel.CRITICAL,
+                            message=f"Dangerous import detected: {node.module}",
+                            details={"module": node.module}
+                        ))
+        except SyntaxError:
+            # Fallback to string matching if syntax error (already caught by _check_syntax)
+            pass
         return violations
 
     def _check_dangerous_patterns(self, code: str) -> tuple:

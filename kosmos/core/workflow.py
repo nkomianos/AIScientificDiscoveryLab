@@ -8,7 +8,7 @@ INITIALIZING → GENERATING_HYPOTHESES → DESIGNING_EXPERIMENTS → EXECUTING
 
 from enum import Enum
 from typing import List, Dict, Optional, Any
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 import logging
 
@@ -97,7 +97,7 @@ class ResearchPlan(BaseModel):
 
     def update_timestamp(self):
         """Update the updated_at timestamp."""
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
 
     def add_hypothesis(self, hypothesis_id: str):
         """Add hypothesis to pool."""
@@ -365,7 +365,7 @@ class ResearchWorkflow:
 
                 # If still in this state, use current time
                 if end_time is None and self.current_state == state:
-                    end_time = datetime.utcnow()
+                    end_time = datetime.now(timezone.utc)
 
                 if end_time:
                     duration = (end_time - transition.timestamp).total_seconds()

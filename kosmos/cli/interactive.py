@@ -9,7 +9,7 @@ import sys
 from typing import Optional, List, Dict, Any
 from pathlib import Path
 
-from rich.prompt import Prompt, Confirm, IntPrompt
+from rich.prompt import Prompt, Confirm, IntPrompt, FloatPrompt
 from rich.panel import Panel
 from rich.markdown import Markdown
 from rich.table import Table
@@ -214,11 +214,18 @@ def configure_research_parameters() -> Dict[str, Any]:
     # Max iterations
     console.print("[cyan]Maximum research iterations:[/cyan]")
     console.print("[muted](How many hypothesis-experiment cycles to run)[/muted]")
-    params["max_iterations"] = IntPrompt.ask(
-        "Iterations",
-        default=10,
-        show_default=True,
-    )
+    
+    while True:
+        iterations = IntPrompt.ask(
+            "Iterations",
+            default=10,
+            show_default=True,
+        )
+        if 1 <= iterations <= 100:
+            params["max_iterations"] = iterations
+            break
+        print_error("Iterations must be between 1 and 100.")
+    
     console.print()
 
     # Experiment budget
@@ -227,9 +234,9 @@ def configure_research_parameters() -> Dict[str, Any]:
     enable_budget = Confirm.ask("Enable budget", default=False)
 
     if enable_budget:
-        params["budget_usd"] = IntPrompt.ask(
+        params["budget_usd"] = FloatPrompt.ask(
             "Budget (USD)",
-            default=50,
+            default=50.0,
             show_default=True,
         )
     else:

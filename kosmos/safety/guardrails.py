@@ -161,15 +161,21 @@ class SafetyGuardrails:
             max_cpu_cores=min(
                 get_value_or_inf(requested_limits.max_cpu_cores),
                 get_value_or_inf(self.default_resource_limits.max_cpu_cores)
-            ) if self.default_resource_limits.max_cpu_cores is not None else requested_limits.max_cpu_cores,
+            ) if self.default_resource_limits.max_cpu_cores is not None and requested_limits.max_cpu_cores is not None else (
+                requested_limits.max_cpu_cores if requested_limits.max_cpu_cores is not None else self.default_resource_limits.max_cpu_cores
+            ),
             max_memory_mb=min(
                 get_value_or_inf(requested_limits.max_memory_mb),
                 get_value_or_inf(self.default_resource_limits.max_memory_mb)
-            ) if self.default_resource_limits.max_memory_mb is not None else requested_limits.max_memory_mb,
+            ) if self.default_resource_limits.max_memory_mb is not None and requested_limits.max_memory_mb is not None else (
+                requested_limits.max_memory_mb if requested_limits.max_memory_mb is not None else self.default_resource_limits.max_memory_mb
+            ),
             max_execution_time_seconds=min(
                 get_value_or_inf(requested_limits.max_execution_time_seconds),
                 get_value_or_inf(self.default_resource_limits.max_execution_time_seconds)
-            ) if self.default_resource_limits.max_execution_time_seconds is not None else requested_limits.max_execution_time_seconds,
+            ) if self.default_resource_limits.max_execution_time_seconds is not None and requested_limits.max_execution_time_seconds is not None else (
+                requested_limits.max_execution_time_seconds if requested_limits.max_execution_time_seconds is not None else self.default_resource_limits.max_execution_time_seconds
+            ),
             allow_network_access=requested_limits.allow_network_access and self.default_resource_limits.allow_network_access,
             allow_file_write=requested_limits.allow_file_write and self.default_resource_limits.allow_file_write,
             allow_subprocess=requested_limits.allow_subprocess and self.default_resource_limits.allow_subprocess
