@@ -43,8 +43,6 @@ def sample_experiment_result():
         primary_test="Two-sample T-test",
         primary_p_value=0.012,
         primary_effect_size=0.65,
-        primary_ci_lower=0.2,
-        primary_ci_upper=1.1,
         supports_hypothesis=True,
         statistical_tests=[
             StatisticalTestResult(
@@ -58,7 +56,6 @@ def sample_experiment_result():
                 sample_size=100,
                 degrees_of_freedom=98,
                 significance_label="*",
-                is_primary=True,
                 significant_0_05=True,   # p=0.012 < 0.05
                 significant_0_01=False,  # p=0.012 > 0.01
                 significant_0_001=False  # p=0.012 > 0.001
@@ -73,8 +70,6 @@ def sample_experiment_result():
                 std=2.1,
                 min=6.2,
                 max=15.8,
-                q1=9.1,
-                q3=11.9,
                 n_samples=50,
                 n_missing=0
             ),
@@ -86,8 +81,6 @@ def sample_experiment_result():
                 std=2.3,
                 min=4.5,
                 max=13.2,
-                q1=7.2,
-                q3=10.1,
                 n_samples=50,
                 n_missing=0
             )

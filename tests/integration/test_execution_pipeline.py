@@ -53,10 +53,9 @@ def ttest_protocol():
             "score": Variable(name="score", type=VariableType.DEPENDENT, description="Test score measurement")
         },
         resource_requirements=ResourceRequirements(
-            estimated_runtime_seconds=300,
-            cpu_cores=1,
+            compute_hours=0.083,  # ~5 minutes
             memory_gb=1,
-            storage_gb=0.1
+            data_size_gb=0.1
         ),
         data_requirements={"format": "csv", "columns": ["group", "score"]},
         random_seed=42,
