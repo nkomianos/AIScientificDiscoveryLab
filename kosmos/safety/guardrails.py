@@ -151,19 +151,23 @@ class SafetyGuardrails:
             return self.default_resource_limits
 
         # Cap requested limits to defaults
+        # Use explicit None checks instead of truthiness to handle 0 values correctly
+        def get_value_or_inf(val):
+            return val if val is not None else float('inf')
+
         enforced = ResourceLimit(
             max_cpu_cores=min(
-                requested_limits.max_cpu_cores or float('inf'),
-                self.default_resource_limits.max_cpu_cores or float('inf')
-            ) if self.default_resource_limits.max_cpu_cores else requested_limits.max_cpu_cores,
+                get_value_or_inf(requested_limits.max_cpu_cores),
+                get_value_or_inf(self.default_resource_limits.max_cpu_cores)
+            ) if self.default_resource_limits.max_cpu_cores is not None else requested_limits.max_cpu_cores,
             max_memory_mb=min(
-                requested_limits.max_memory_mb or float('inf'),
-                self.default_resource_limits.max_memory_mb or float('inf')
-            ) if self.default_resource_limits.max_memory_mb else requested_limits.max_memory_mb,
+                get_value_or_inf(requested_limits.max_memory_mb),
+                get_value_or_inf(self.default_resource_limits.max_memory_mb)
+            ) if self.default_resource_limits.max_memory_mb is not None else requested_limits.max_memory_mb,
             max_execution_time_seconds=min(
-                requested_limits.max_execution_time_seconds or float('inf'),
-                self.default_resource_limits.max_execution_time_seconds or float('inf')
-            ) if self.default_resource_limits.max_execution_time_seconds else requested_limits.max_execution_time_seconds,
+                get_value_or_inf(requested_limits.max_execution_time_seconds),
+                get_value_or_inf(self.default_resource_limits.max_execution_time_seconds)
+            ) if self.default_resource_limits.max_execution_time_seconds is not None else requested_limits.max_execution_time_seconds,
             allow_network_access=requested_limits.allow_network_access and self.default_resource_limits.allow_network_access,
             allow_file_write=requested_limits.allow_file_write and self.default_resource_limits.allow_file_write,
             allow_subprocess=requested_limits.allow_subprocess and self.default_resource_limits.allow_subprocess
