@@ -12,6 +12,7 @@ import shutil
 import time
 import logging
 import threading
+import platform
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 from datetime import datetime
@@ -214,6 +215,39 @@ class DockerSandbox:
             except Exception as e:
                 logger.warning(f"Failed to cleanup temp directory {temp_dir}: {e}")
 
+    def _normalize_docker_path(self, path: str) -> str:
+        """
+        Normalize paths for Docker volume mounting, especially on Windows.
+
+        Handles:
+        - Windows path separators (backslashes)
+        - Drive letters (C:\\ -> /c/)
+        - Spaces in paths
+        - WSL paths
+        """
+        path = str(Path(path).absolute())
+
+        # Handle Windows paths
+        if platform.system() == 'Windows' or '\\' in path:
+            # Convert backslashes to forward slashes
+            path = path.replace('\\', '/')
+
+            # Handle drive letters (C:/ -> /c/)
+            if len(path) > 1 and path[1] == ':':
+                drive = path[0].lower()
+                path = f'/{drive}{path[2:]}'
+
+        # Handle WSL paths (/mnt/c/... -> /c/... for Docker Desktop)
+        elif path.startswith('/mnt/'):
+            # Extract drive letter from /mnt/c/... format
+            parts = path.split('/')
+            if len(parts) >= 3 and len(parts[2]) == 1:
+                drive = parts[2].lower()
+                rest = '/'.join(parts[3:])
+                path = f'/{drive}/{rest}'
+
+        return path
+
     def _run_container(
         self,
         temp_dir: str,
@@ -221,16 +255,20 @@ class DockerSandbox:
     ) -> SandboxExecutionResult:
         """Run code in Docker container with resource limits and monitoring."""
 
-        # Prepare volume mounts
+        # Prepare volume mounts with normalized paths for Windows compatibility
+        code_path = self._normalize_docker_path(f"{temp_dir}/code")
+        output_path = self._normalize_docker_path(f"{temp_dir}/output")
+
         volumes = {
-            f"{temp_dir}/code": {'bind': '/workspace/code', 'mode': 'ro'},
-            f"{temp_dir}/output": {'bind': '/workspace/output', 'mode': 'rw'}
+            code_path: {'bind': '/workspace/code', 'mode': 'ro'},
+            output_path: {'bind': '/workspace/output', 'mode': 'rw'}
         }
 
         # Add data volume if exists
         data_dir = Path(temp_dir) / "data"
         if data_dir.exists():
-            volumes[str(data_dir)] = {'bind': '/workspace/data', 'mode': 'ro'}
+            data_path = self._normalize_docker_path(str(data_dir))
+            volumes[data_path] = {'bind': '/workspace/data', 'mode': 'ro'}
 
         # Prepare environment variables
         env = {

@@ -6,14 +6,15 @@ message passing, and feedback integration.
 """
 
 import json
+from datetime import datetime, timezone
 from unittest.mock import Mock, patch, MagicMock
 import pytest
 
 from kosmos.agents.research_director import ResearchDirectorAgent, NextAction
 from kosmos.core.workflow import WorkflowState, ResearchWorkflow, ResearchPlan
 from kosmos.models.hypothesis import Hypothesis, HypothesisStatus
-from kosmos.models.result import ExperimentResult, ResultStatus
-from kosmos.models.experiment import ExperimentProtocol
+from kosmos.models.result import ExperimentResult, ResultStatus, ExecutionMetadata, StatisticalTestResult
+from kosmos.models.experiment import ExperimentProtocol, Variable, VariableType, ResourceRequirements
 
 
 # ============================================================================
@@ -100,15 +101,21 @@ class TestSingleIteration:
             objective="Validate caffeine effects on cognitive performance through statistical analysis",
             steps=[ProtocolStep(
                 step_number=1,
+                title="Analysis",
+                action="execute_analysis",
                 description="Run statistical analysis on caffeine performance data",
                 expected_duration_minutes=5
             )],
-            variables={"caffeine_dose": Variable(name="caffeine_dose", description="Caffeine dose in milligrams", unit="mg")},
+            variables={"caffeine_dose": Variable(
+                name="caffeine_dose",
+                type=VariableType.INDEPENDENT,
+                description="Caffeine dose in milligrams",
+                unit="mg"
+            )},
             resource_requirements=ResourceRequirements(
-                estimated_runtime_seconds=300,
-                cpu_cores=1,
+                compute_hours=0.083,  # 300 seconds / 3600
                 memory_gb=1,
-                storage_gb=0.1
+                data_size_gb=0.1
             )
         )
 
@@ -126,12 +133,21 @@ class TestSingleIteration:
         # Simulate execution completion
         result = ExperimentResult(
             id="result_001",
+            experiment_id="exp_001",
+            protocol_id=protocol.id,
             hypothesis_id=hypothesis.id,
             supports_hypothesis=True,
             primary_p_value=0.01,
             primary_effect_size=0.75,
             primary_test="t-test",
             status=ResultStatus.SUCCESS,
+            metadata=ExecutionMetadata(
+                start_time=datetime.now(timezone.utc),
+                end_time=datetime.now(timezone.utc),
+                duration_seconds=5.0,
+                python_version="3.11",
+                platform="linux"
+            )
         )
 
         director.research_plan.add_result(result.id)
@@ -348,8 +364,9 @@ class TestMessagePassing:
 
         # Create response message
         response = AgentMessage(
-            from_agent_id="hypothesis_generator",
-            to_agent_id=director.agent_id,
+            type="response",
+            from_agent="hypothesis_generator",
+            to_agent=director.agent_id,
             content={"hypothesis_ids": ["hyp_001", "hyp_002"]},
             context={},
         )
@@ -515,18 +532,27 @@ class TestFeedbackIntegration:
             id="hyp_001",
             research_question=director.research_question,
             statement="Caffeine improves memory",
-            rationale="Stimulant effects",
+            rationale="Stimulant effects on cognition and performance",
             domain="neuroscience",
         )
 
         result = ExperimentResult(
             id="result_001",
+            experiment_id="exp_001",
+            protocol_id="proto_001",
             hypothesis_id=hypothesis.id,
             supports_hypothesis=True,
             primary_p_value=0.01,
             primary_effect_size=0.75,
             primary_test="t-test",
             status=ResultStatus.SUCCESS,
+            metadata=ExecutionMetadata(
+                start_time=datetime.now(timezone.utc),
+                end_time=datetime.now(timezone.utc),
+                duration_seconds=5.0,
+                python_version="3.11",
+                platform="linux"
+            )
         )
 
         # Process feedback
@@ -546,18 +572,41 @@ class TestFeedbackIntegration:
             id="hyp_002",
             research_question=director.research_question,
             statement="Caffeine reduces errors",
-            rationale="Attention enhancement",
+            rationale="Attention enhancement and focus improvement",
             domain="neuroscience",
         )
 
         result = ExperimentResult(
             id="result_002",
+            experiment_id="exp_002",
+            protocol_id="proto_002",
             hypothesis_id=hypothesis.id,
             supports_hypothesis=False,
             primary_p_value=0.65,
             primary_effect_size=0.12,
             primary_test="t-test",
             status=ResultStatus.SUCCESS,
+            statistical_tests=[
+                StatisticalTestResult(
+                    test_type="t-test",
+                    test_name="t-test",
+                    statistic=0.5,
+                    p_value=0.65,
+                    significant_0_05=False,
+                    significant_0_01=False,
+                    significant_0_001=False,
+                    significance_label="ns"
+                )
+            ],
+            metadata=ExecutionMetadata(
+                experiment_id="exp_002",
+                protocol_id="proto_002",
+                start_time=datetime.utcnow(),
+                end_time=datetime.utcnow(),
+                duration_seconds=1.0,
+                python_version="3.11",
+                platform="linux"
+            )
         )
 
         signals = director.feedback_loop.process_result_feedback(result, hypothesis)
@@ -576,7 +625,7 @@ class TestFeedbackIntegration:
             id="hyp_001",
             research_question=director.research_question,
             statement="Caffeine improves memory",
-            rationale="Stimulant effects",
+            rationale="Stimulant effects on cognition and performance",
             domain="neuroscience",
         )
 
@@ -606,6 +655,8 @@ class TestFeedbackIntegration:
         director.strategy_stats["hypothesis_generation"]["attempts"] += 1
 
         # Record failure for another strategy
+        if "failures" not in director.strategy_stats["experiment_design"]:
+            director.strategy_stats["experiment_design"]["failures"] = 0
         director.strategy_stats["experiment_design"]["failures"] += 1
         director.strategy_stats["experiment_design"]["attempts"] += 1
 
@@ -628,7 +679,7 @@ class TestFeedbackIntegration:
                 id=f"hyp_{i}",
                 research_question=director.research_question,
                 statement=f"Hypothesis {i}",
-                rationale="Rationale",
+                rationale="Rationale must be at least twenty characters long for validity",
                 domain="neuroscience",
             )
             for i in range(3)
@@ -637,12 +688,35 @@ class TestFeedbackIntegration:
         results = [
             ExperimentResult(
                 id=f"result_{i}",
+                experiment_id=f"exp_{i}",
+                protocol_id=f"proto_{i}",
                 hypothesis_id=f"hyp_{i}",
                 supports_hypothesis=True,
                 primary_p_value=0.01,
                 primary_effect_size=0.7,
                 primary_test="t-test",
                 status=ResultStatus.SUCCESS,
+                statistical_tests=[
+                    StatisticalTestResult(
+                        test_type="t-test",
+                        test_name="t-test",
+                        statistic=2.5,
+                        p_value=0.01,
+                        significant_0_05=True,
+                        significant_0_01=True,
+                        significant_0_001=False,
+                        significance_label="**"
+                    )
+                ],
+                metadata=ExecutionMetadata(
+                    experiment_id=f"exp_{i}",
+                    protocol_id=f"proto_{i}",
+                    start_time=datetime.utcnow(),
+                    end_time=datetime.utcnow(),
+                    duration_seconds=1.0,
+                    python_version="3.11",
+                    platform="linux"
+                )
             )
             for i in range(3)
         ]
