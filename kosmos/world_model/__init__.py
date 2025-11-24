@@ -140,6 +140,9 @@ from kosmos.world_model.models import (
 # Factory (Day 5 - COMPLETE)
 from kosmos.world_model.factory import get_world_model, reset_world_model
 
+# Artifact State Manager (Gap 1)
+from kosmos.world_model.artifacts import ArtifactStateManager, Finding, Hypothesis
+
 __all__ = [
     # Interfaces
     "WorldModelStorage",
@@ -153,6 +156,10 @@ __all__ = [
     # Factory
     "get_world_model",
     "reset_world_model",
+    # Artifact State Manager (Gap 1)
+    "ArtifactStateManager",
+    "Finding",
+    "Hypothesis",
 ]
 
 __version__ = "0.1.0"  # World model module version
