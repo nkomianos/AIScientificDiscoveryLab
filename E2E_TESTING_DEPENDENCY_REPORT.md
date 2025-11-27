@@ -117,7 +117,7 @@ For each file:
 
 ```bash
 # LLM Provider (DeepSeek via OpenAI-compatible)
-OPENAI_API_KEY=sk-b05792eca81c46dbb9fdc4a3eb093f13
+OPENAI_API_KEY=sk-REDACTED-key-revoked
 OPENAI_MODEL=deepseek-chat
 OPENAI_BASE_URL=https://api.deepseek.com
 OPENAI_MAX_TOKENS=4096

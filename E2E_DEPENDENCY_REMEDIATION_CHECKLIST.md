@@ -193,7 +193,7 @@ pytest tests/unit --tb=no -q
 # Verify API configuration
 env | grep -E "OPENAI"
 # Expected:
-# OPENAI_API_KEY=sk-b05792eca81c46dbb9fdc4a3eb093f13
+# OPENAI_API_KEY=sk-REDACTED-key-revoked
 # OPENAI_BASE_URL=https://api.deepseek.com
 # OPENAI_MODEL=deepseek-chat
 ```
@@ -257,7 +257,7 @@ Current configuration (from `.env`):
 
 ```bash
 # LLM Provider (working)
-OPENAI_API_KEY=sk-b05792eca81c46dbb9fdc4a3eb093f13
+OPENAI_API_KEY=sk-REDACTED-key-revoked
 OPENAI_BASE_URL=https://api.deepseek.com
 OPENAI_MODEL=deepseek-chat
 

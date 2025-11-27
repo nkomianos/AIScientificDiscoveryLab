@@ -135,7 +135,7 @@ Based on typical API drift:
 
 ```bash
 # Set environment (already configured)
-export OPENAI_API_KEY=sk-b05792eca81c46dbb9fdc4a3eb093f13
+export OPENAI_API_KEY=sk-REDACTED-key-revoked
 export OPENAI_BASE_URL=https://api.deepseek.com
 export OPENAI_MODEL=deepseek-chat
 
