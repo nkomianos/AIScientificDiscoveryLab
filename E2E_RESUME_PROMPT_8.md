@@ -7,87 +7,84 @@ Copy and paste this into a new Claude Code session to continue:
 ---
 
 ```
-@E2E_CHECKPOINT_20251127_SESSION7.md
+@VALIDATION_ROADMAP.md
+@E2E_CHECKPOINT_20251127_SESSION7_FINAL.md
 
-Continue from Session 7. All E2E tests passing (32/39, 7 skipped).
+Continue from Session 7. We are on Phase 2 of the validation roadmap.
 
 ## Current State
 - E2E tests: 32 passed, 0 failed, 7 skipped
-- LiteLLM provider: 20/20 unit tests passing
-- Provider: ollama/qwen3-kosmos-fast at localhost:11434
-- Issue #29: Fixed and closed
+- Phase 1 (Component Coverage): Complete
+- Phase 2 (Critical Path Completion): Not Started
+- End Goal: Validate implementation against paper claims
 
-## Skipped Tests (7)
+## Phase 2 Priority Order
 
-These tests are skipped due to infrastructure or setup issues:
+The skipped tests represent critical path blockers:
 
-1. test_experiment_designer - skip reason is stale (was PromptTemplate issue, now fixed)
-2. test_code_generator - requires complex ExperimentProtocol setup
-3. test_sandboxed_execution - Docker sandbox not configured
-4. test_statistical_analysis - DataAnalysis API mismatch
-5. test_data_analyst - DataAnalyst API mismatch
-6. test_database_persistence - Hypothesis model ID issue
-7. test_knowledge_graph - Neo4j not configured
+1. **Code Generation Path** (2.1)
+   - Unskip test_experiment_designer (stale skip reason)
+   - Fix test_code_generator setup
 
-## Remaining Gaps
+2. **Execution Path** (2.2)
+   - Configure Docker for test_sandboxed_execution
 
-1. Docker sandbox not integrated into tests
-2. Full autonomous research loop (20 cycles, 10 tasks) not validated
-3. Cost tracking not implemented
-4. Some agent APIs have test mismatches
-5. Neo4j knowledge graph untested
+3. **Analysis Path** (2.3)
+   - Fix test_statistical_analysis API mismatch
+   - Fix test_data_analyst API mismatch
 
-## Suggested Next Steps
+4. **Persistence Path** (2.4)
+   - Fix Hypothesis model ID issue
+   - Fix test_database_persistence
 
-### Option A: Fix Stale Skip Reasons
-The test_experiment_designer skip reason references PromptTemplate.format() which is now fixed. Verify and unskip.
+## Recommended Session 8 Focus
 
-### Option B: Validate Full Research Cycle
-Run a longer research workflow to validate multi-iteration behavior with production LLMs.
-
-### Option C: Docker Sandbox Integration
-Configure Docker and enable test_sandboxed_execution.
-
-### Option D: Fix Agent API Mismatches
-Investigate and fix the DataAnalysis/DataAnalyst API mismatches.
+Start with Phase 2.1 (Code Generation Path):
+1. Unskip test_experiment_designer in tests/e2e/test_system_sanity.py
+2. Implement actual test (currently just `pass`)
+3. Fix test_code_generator setup
+4. Verify chain: hypothesis → experiment → code generation
 
 ## Key Files
-- Provider: kosmos/core/providers/litellm_provider.py
-- Research Director: kosmos/agents/research_director.py
 - Skipped Tests: tests/e2e/test_system_sanity.py
-- Checkpoint: E2E_CHECKPOINT_20251127_SESSION7.md
-```
-
----
-
-## Alternative: Unskip test_experiment_designer
-
-```
-@E2E_CHECKPOINT_20251127_SESSION7.md
-
-The test_experiment_designer test is skipped with reason "PromptTemplate.format() internal framework issue - deferred to Phase 2" but this was fixed in Session 7.
-
-Steps:
-1. Remove the @pytest.mark.skip decorator from test_experiment_designer in tests/e2e/test_system_sanity.py
-2. Add proper test implementation (currently just `pass`)
-3. Run: pytest tests/e2e/test_system_sanity.py::TestComponentSanity::test_experiment_designer -v --no-cov
+- Experiment Designer: kosmos/agents/experiment_designer.py
+- Code Generator: kosmos/execution/code_generator.py
+- Roadmap: VALIDATION_ROADMAP.md
 ```
 
 ---
 
 ## Session History
 
-| Session | Focus | E2E Results |
-|---------|-------|-------------|
-| Session 4 | Investigation | 26 pass, 13 fail |
-| Session 5 | LiteLLM Integration | 26 pass, 13 fail |
-| Session 6 | Ollama Testing | 30 pass, 2 fail, 7 skip |
-| Session 7 | Bug Fixes + Issue #29 | 32 pass, 0 fail, 7 skip |
-| Session 8 | TBD | TBD |
+| Session | Focus | E2E Results | Phase |
+|---------|-------|-------------|-------|
+| 4 | Investigation | 26/39 | - |
+| 5 | LiteLLM Integration | 26/39 | - |
+| 6 | Ollama Testing | 30/39 | - |
+| 7 | Bug Fixes | 32/39 | Phase 1 Complete |
+| 8 | TBD | TBD | Phase 2 |
 
 ---
 
-## Environment Variables
+## End Goal Reminder
+
+**Paper Claims to Validate:**
+- 79.4% accuracy on scientific statements
+- 7 validated discoveries
+- 20 cycles, 10 tasks per cycle
+- Fully autonomous operation
+
+**Realistic Targets:**
+- 39/39 tests passing
+- 10+ autonomous cycles
+- Documented performance comparison
+- Honest gap analysis
+
+See VALIDATION_ROADMAP.md for full plan.
+
+---
+
+## Environment
 
 ```bash
 LLM_PROVIDER=litellm
