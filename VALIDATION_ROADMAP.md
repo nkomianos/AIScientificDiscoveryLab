@@ -83,14 +83,20 @@ The skipped tests are not optional - they represent untested critical path compo
 
 ## Phase 3: Extended Workflow Validation
 
-**Status:** Not Started
+**Status:** In Progress (3.1 Complete)
 
 **Objective:** Prove the system runs autonomously for extended periods.
 
 ### 3.1 Baseline Measurement
-- [ ] Run 3-cycle workflow, capture all outputs
-- [ ] Document: time per cycle, tokens per cycle, failures
-- [ ] Establish baseline metrics
+- [x] Run 3-cycle workflow, capture all outputs - Session 11
+- [x] Document: time per cycle, tokens per cycle, failures - Session 11
+- [x] Establish baseline metrics - Session 11
+
+**Baseline Results (Session 11):**
+- 3/3 cycles completed in 489s (8.2 min)
+- 6 hypotheses generated, 2 experiments designed
+- Avg time/cycle: 163s
+- 7 LLM requests, 25,988 tokens, $0.00 cost (local Ollama)
 
 ### 3.2 Short Extended Run (5 cycles)
 - [ ] Run 5-cycle workflow with 5 tasks per cycle
@@ -200,8 +206,9 @@ The skipped tests are not optional - they represent untested critical path compo
 | Metric | Paper Claim | Realistic Target | Current |
 |--------|-------------|------------------|---------|
 | E2E Tests | N/A | 39/39 | 38/39 |
-| Max Autonomous Cycles | 20 | 10+ | 2-3 |
-| Tasks per Cycle | 10 | 10 | 5 |
+| Max Autonomous Cycles | 20 | 10+ | 3 (baseline) |
+| Hypotheses/Cycle | - | - | 2 |
+| Avg Time/Cycle | - | - | 163s |
 | Accuracy | 79.4% | Measured honestly | Unknown |
 | Discoveries | 7 | Documented attempts | 0 |
 
@@ -251,4 +258,4 @@ After each phase, create:
 ---
 
 *Roadmap created: 2025-11-27*
-*Last updated: 2025-11-28 Session 10*
+*Last updated: 2025-11-28 Session 11 (Phase 3.1 Complete)*
