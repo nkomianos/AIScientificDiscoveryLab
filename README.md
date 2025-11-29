@@ -5,9 +5,10 @@ Open-source implementation of the autonomous AI scientist described in [Lu et al
 [![Version](https://img.shields.io/badge/version-0.2.0--alpha-blue.svg)](https://github.com/jimmc414/Kosmos)
 [![Status](https://img.shields.io/badge/status-alpha-orange.svg)](https://github.com/jimmc414/Kosmos)
 [![Implementation](https://img.shields.io/badge/gaps-6%2F6%20complete-green.svg)](IMPLEMENTATION_REPORT.md)
+[![Tests](https://img.shields.io/badge/unit-339%20passing-green.svg)](TESTS_STATUS.md)
 [![Tests](https://img.shields.io/badge/E2E-32%2F39%20passing-yellow.svg)](TESTS_STATUS.md)
 
-**Current state**: All 6 gaps implemented. E2E testing in progress with local LLMs via Ollama/LiteLLM. See [Project Status](#project-status) for honest assessment of remaining work.
+**Current state**: All 6 gaps implemented. Debug mode with enhanced observability now available. Model comparison infrastructure tested across DeepSeek, GPT-4o-mini, and Claude Haiku 4.5. E2E testing validated with local LLMs via Ollama/LiteLLM. See [Project Status](#project-status) for honest assessment of remaining work.
 
 ## Paper Gap Analysis
 
@@ -132,12 +133,12 @@ Reference repositories in [`kosmos-reference/`](kosmos-reference/). Skills integ
 
 ## Project Status
 
-### Test Results (as of 2025-11-27)
+### Test Results (as of 2025-11-29)
 
 | Category | Total | Pass | Fail | Skip | Notes |
 |----------|-------|------|------|------|-------|
-| Unit tests | 273+ | 273+ | 0 | 0 | Core gap implementations |
-| LiteLLM provider | 20 | 20 | 0 | 0 | Multi-provider support |
+| Unit tests | 339 | 339 | 0 | 0 | Core gap implementations |
+| Integration | 43 | 43 | 0 | 0 | Pipeline tests |
 | E2E tests | 39 | 32 | 0 | 7 | Tested with Ollama |
 
 The 7 skipped E2E tests are due to:
@@ -153,6 +154,11 @@ The 7 skipped E2E tests are due to:
 - Result analysis and interpretation
 - Multi-provider LLM support (Anthropic, OpenAI, LiteLLM/Ollama)
 - Basic research cycle progression
+- Debug mode with configurable verbosity (levels 0-3)
+- Real-time stage tracking with JSON output
+- LLM call instrumentation across all providers
+- Provider timeout configuration
+- Model comparison infrastructure (see [MODEL_COMPARISON_REPORT.md](MODEL_COMPARISON_REPORT.md))
 
 ### What Does Not Work Yet
 
@@ -280,6 +286,30 @@ LITELLM_MODEL=deepseek/deepseek-chat
 LITELLM_API_KEY=sk-...
 ```
 
+### Debug Mode
+
+```bash
+# Enable debug mode
+DEBUG_MODE=true
+
+# Debug verbosity level (0-3)
+# 0=off, 1=critical path, 2=full trace, 3=data dumps
+DEBUG_LEVEL=2
+
+# Log LLM request/response summaries
+LOG_LLM_CALLS=true
+
+# Log inter-agent message routing
+LOG_AGENT_MESSAGES=true
+
+# Log workflow state transitions with timing
+LOG_WORKFLOW_TRANSITIONS=true
+
+# Enable real-time stage tracking (outputs to logs/stages.jsonl)
+STAGE_TRACKING_ENABLED=true
+STAGE_TRACKING_FILE=logs/stages.jsonl
+```
+
 ### Optional Services
 
 ```bash
@@ -302,10 +332,38 @@ kosmos/
 ├── execution/        # Gap 4: Sandboxed execution (Docker + Jupyter)
 ├── validation/       # Gap 5: Discovery validation (ScholarEval)
 ├── workflow/         # Integration layer combining all components
-├── core/             # LLM clients, configuration
+├── core/             # LLM clients, configuration, stage_tracker
+│   ├── providers/    # Anthropic, OpenAI, LiteLLM providers with instrumentation
+│   └── stage_tracker.py  # Real-time observability for multi-step processes
 ├── literature/       # Literature search (arXiv, PubMed, Semantic Scholar)
 ├── knowledge/        # Vector store, embeddings
-└── cli/              # Command-line interface
+├── monitoring/       # Metrics, alerts, cost tracking
+└── cli/              # Command-line interface with debug options
+```
+
+### CLI Usage
+
+```bash
+# Run research with default settings
+kosmos run --objective "Your research question"
+
+# Enable trace logging (maximum verbosity)
+kosmos run --trace --objective "Your research question"
+
+# Set specific debug level (0-3)
+kosmos run --debug-level 2 --objective "Your research question"
+
+# Debug specific modules only
+kosmos run --debug --debug-modules "research_director,workflow" --objective "Your research question"
+
+# Show system information
+kosmos info
+
+# Run diagnostics
+kosmos doctor
+
+# Show version
+kosmos version
 ```
 
 ## Documentation
@@ -315,6 +373,7 @@ kosmos/
 - [IMPLEMENTATION_REPORT.md](IMPLEMENTATION_REPORT.md) - Architecture decisions
 - [PRODUCTION_READINESS_REPORT.md](PRODUCTION_READINESS_REPORT.md) - Current status
 - [TESTS_STATUS.md](TESTS_STATUS.md) - Test coverage
+- [MODEL_COMPARISON_REPORT.md](MODEL_COMPARISON_REPORT.md) - Multi-model performance comparison
 - [GETTING_STARTED.md](GETTING_STARTED.md) - Usage examples
 
 ## Based On
@@ -342,6 +401,6 @@ MIT License - see [LICENSE](LICENSE).
 
 Version: 0.2.0-alpha
 Gap Implementation: 6/6 complete
-Test Coverage: 273 unit tests passing (core modules)
-Next Step: End-to-end integration testing
-Last Updated: 2025-11-25
+Test Coverage: 339 unit tests + 43 integration tests passing
+Features: Debug mode, stage tracking, multi-provider support, model comparison
+Last Updated: 2025-11-29
