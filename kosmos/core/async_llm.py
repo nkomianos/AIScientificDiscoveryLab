@@ -12,6 +12,8 @@ from typing import List, Optional, Dict, Any, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime
 
+from kosmos.config import _DEFAULT_CLAUDE_SONNET_MODEL
+
 try:
     from anthropic import AsyncAnthropic, APIError, APITimeoutError, RateLimitError
     ASYNC_ANTHROPIC_AVAILABLE = True
@@ -280,7 +282,7 @@ class AsyncClaudeClient:
     def __init__(
         self,
         api_key: str,
-        model: str = "claude-3-5-sonnet-20241022",
+        model: str = _DEFAULT_CLAUDE_SONNET_MODEL,
         max_tokens: int = 4096,
         temperature: float = 0.7,
         max_concurrent: int = 5,
@@ -700,7 +702,7 @@ async def async_generate_text(
     prompt: str,
     api_key: str,
     system: Optional[str] = None,
-    model: str = "claude-3-5-sonnet-20241022",
+    model: str = _DEFAULT_CLAUDE_SONNET_MODEL,
     max_tokens: int = 4096,
     temperature: float = 0.7
 ) -> str:

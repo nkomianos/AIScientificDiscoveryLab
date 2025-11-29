@@ -13,6 +13,8 @@ import os
 
 from kosmos.utils.compat import model_to_dict
 
+_DEFAULT_CLAUDE_SONNET_MODEL = "claude-3-5-sonnet-20241022" #claude-sonnet-4-5
+_DEFAULT_CLAUDE_HAIKU_MODEL = "claude-3-5-haiku-20241022"  #claude-haiku-4-5
 
 def parse_comma_separated(v):
     """Parse comma-separated string into list for Pydantic V2 compatibility."""
@@ -36,7 +38,7 @@ class ClaudeConfig(BaseSettings):
         alias="ANTHROPIC_API_KEY"
     )
     model: str = Field(
-        default="claude-3-5-sonnet-20241022",
+        default=_DEFAULT_CLAUDE_SONNET_MODEL,
         description="Claude model to use",
         alias="CLAUDE_MODEL"
     )
@@ -58,6 +60,12 @@ class ClaudeConfig(BaseSettings):
         default=True,
         description="Enable prompt caching to reduce API costs",
         alias="CLAUDE_ENABLE_CACHE"
+    )
+
+    base_url: Optional[str] = Field(
+        default=None,
+        description="Custom base URL for Claude-compatible APIs",
+        alias="CLAUDE_BASE_URL"
     )
 
     @property

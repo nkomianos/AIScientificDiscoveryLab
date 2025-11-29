@@ -11,7 +11,7 @@ from datetime import datetime
 from enum import Enum
 
 from kosmos.models.hypothesis import ExperimentType
-
+from kosmos.config import _DEFAULT_CLAUDE_SONNET_MODEL
 
 class VariableType(str, Enum):
     """Types of variables in an experiment."""
@@ -559,7 +559,7 @@ class ExperimentDesignResponse(BaseModel):
 
     # Design metadata
     design_time_seconds: float
-    model_used: str = "claude-sonnet-4.5"
+    model_used: str = _DEFAULT_CLAUDE_SONNET_MODEL
     template_used: Optional[str] = None
 
     # Validation results

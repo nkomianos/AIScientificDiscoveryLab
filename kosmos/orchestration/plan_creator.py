@@ -18,6 +18,8 @@ import logging
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 
+from kosmos.config import _DEFAULT_CLAUDE_SONNET_MODEL
+
 logger = logging.getLogger(__name__)
 
 
@@ -82,7 +84,7 @@ class PlanCreatorAgent:
     def __init__(
         self,
         anthropic_client=None,
-        model: str = "claude-3-5-sonnet-20241022",
+        model: str = _DEFAULT_CLAUDE_SONNET_MODEL,
         default_num_tasks: int = 10
     ):
         """

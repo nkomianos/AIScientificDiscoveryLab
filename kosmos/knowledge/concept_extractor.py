@@ -22,6 +22,7 @@ from kosmos.literature.base_client import PaperMetadata
 
 logger = logging.getLogger(__name__)
 
+from kosmos.config import _DEFAULT_CLAUDE_SONNET_MODEL
 
 @dataclass
 class ExtractedConcept:
@@ -91,7 +92,7 @@ class ConceptExtractor:
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model: str = "claude-sonnet-4-5-20250929",
+        model: str = _DEFAULT_CLAUDE_SONNET_MODEL,
         cache_dir: Optional[str] = None,
         use_cache: bool = True,
         max_tokens: int = 4096,
@@ -621,7 +622,7 @@ _concept_extractor: Optional[ConceptExtractor] = None
 
 def get_concept_extractor(
     api_key: Optional[str] = None,
-    model: str = "claude-sonnet-4-5-20250929",
+    model: str = _DEFAULT_CLAUDE_SONNET_MODEL,
     reset: bool = False
 ) -> ConceptExtractor:
     """

@@ -28,6 +28,7 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+from kosmos.config import _DEFAULT_CLAUDE_SONNET_MODEL, _DEFAULT_CLAUDE_HAIKU_MODEL
 
 class AnthropicProvider(LLMProvider):
     """
@@ -70,6 +71,7 @@ class AnthropicProvider(LLMProvider):
                 - temperature: Sampling temperature (default: 0.7)
                 - enable_cache: Enable caching (default: True)
                 - enable_auto_model_selection: Auto-select Haiku/Sonnet (default: False)
+                - base_url: (Optional) Alternative endpoint for Anthropic API
         """
         super().__init__(config)
 
@@ -86,7 +88,7 @@ class AnthropicProvider(LLMProvider):
                 "Set to your API key or '999999999999999999999999999999999999999999999999' for CLI mode."
             )
 
-        self.model = config.get('model', 'claude-3-5-sonnet-20241022')
+        self.model = config.get('model', _DEFAULT_CLAUDE_SONNET_MODEL)
         self.default_model = self.model
         self.max_tokens = config.get('max_tokens', 4096)
         self.temperature = config.get('temperature', 0.7)
@@ -94,16 +96,22 @@ class AnthropicProvider(LLMProvider):
         self.enable_auto_model_selection = config.get('enable_auto_model_selection', False)
 
         # Model variants for auto-selection
-        self.haiku_model = "claude-3-5-haiku-20241022"
-        self.sonnet_model = "claude-3-5-sonnet-20241022"
+        self.haiku_model = _DEFAULT_CLAUDE_SONNET_MODEL
+        self.sonnet_model = _DEFAULT_CLAUDE_SONNET_MODEL
+
+        self.base_url = config.get('base_url') or os.environ.get('CLAUDE_BASE_URL') # NEW: get user-supplied endpoint if any
 
         # Detect mode (CLI or API)
         self.is_cli_mode = self.api_key.replace('9', '') == ''
 
         # Initialize Anthropic client
         try:
-            self.client = Anthropic(api_key=self.api_key)
-            logger.info(f"Anthropic provider initialized in {'CLI' if self.is_cli_mode else 'API'} mode")
+            if self.base_url:
+                self.client = Anthropic(api_key=self.api_key, base_url=self.base_url)  # NEW: pass base_url if present
+                logger.info(f"Anthropic provider initialized with custom base_url={self.base_url}")
+            else:
+                self.client = Anthropic(api_key=self.api_key)
+                logger.info(f"Anthropic provider initialized in {'CLI' if self.is_cli_mode else 'API'} mode")
         except Exception as e:
             logger.error(f"Failed to initialize Anthropic client: {e}")
             raise ProviderAPIError("anthropic", f"Failed to initialize: {e}", raw_error=e)

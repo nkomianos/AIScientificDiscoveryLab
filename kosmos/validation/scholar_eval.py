@@ -18,6 +18,8 @@ import logging
 from typing import Dict, Optional, Any
 from dataclasses import dataclass, asdict
 
+from kosmos.config import _DEFAULT_CLAUDE_SONNET_MODEL
+
 logger = logging.getLogger(__name__)
 
 
@@ -99,7 +101,7 @@ class ScholarEvalValidator:
         anthropic_client=None,
         threshold: float = 0.75,
         min_rigor_score: float = 0.70,
-        model: str = "claude-3-5-sonnet-20241022"
+        model: str = _DEFAULT_CLAUDE_SONNET_MODEL
     ):
         """
         Initialize ScholarEval validator.

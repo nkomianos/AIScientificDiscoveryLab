@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, validator, field_validator, ConfigDict
 from datetime import datetime
 from enum import Enum
 
+from kosmos.config import _DEFAULT_CLAUDE_SONNET_MODEL
 
 class ExperimentType(str, Enum):
     """Types of experiments that can test a hypothesis."""
@@ -208,7 +209,7 @@ class HypothesisGenerationResponse(BaseModel):
     # Generation metadata
     generation_time_seconds: float
     num_papers_analyzed: int = 0
-    model_used: str = "claude-sonnet-4.5"
+    model_used: str = _DEFAULT_CLAUDE_SONNET_MODEL
 
     # Quality metrics
     avg_novelty_score: Optional[float] = None

@@ -17,6 +17,8 @@ from typing import Any, Dict, List, Optional, Union
 import json
 import logging
 
+from kosmos.config import _DEFAULT_CLAUDE_SONNET_MODEL, _DEFAULT_CLAUDE_HAIKU_MODEL
+
 try:
     from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
     HAS_ANTHROPIC = True
@@ -130,7 +132,7 @@ class ClaudeClient:
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model: str = "claude-3-5-sonnet-20241022",
+        model: str = _DEFAULT_CLAUDE_SONNET_MODEL,
         max_tokens: int = 4096,
         temperature: float = 0.7,
         enable_cache: bool = True,
@@ -169,8 +171,8 @@ class ClaudeClient:
         self.enable_auto_model_selection = enable_auto_model_selection
 
         # Model variants for auto-selection
-        self.haiku_model = "claude-3-5-haiku-20241022"
-        self.sonnet_model = "claude-3-5-sonnet-20241022"
+        self.haiku_model = _DEFAULT_CLAUDE_HAIKU_MODEL
+        self.sonnet_model = _DEFAULT_CLAUDE_SONNET_MODEL
 
         # Detect mode
         self.is_cli_mode = self.api_key.replace('9', '') == ''
@@ -632,7 +634,7 @@ def get_client(reset: bool = False, use_provider_system: bool = True) -> Union[C
                     from kosmos.core.providers.anthropic import AnthropicProvider
                     fallback_config = {
                         'api_key': os.environ.get('ANTHROPIC_API_KEY'),
-                        'model': 'claude-3-5-sonnet-20241022',
+                        'model': _DEFAULT_CLAUDE_SONNET_MODEL,
                         'max_tokens': 4096,
                         'temperature': 0.7,
                         'enable_cache': True,

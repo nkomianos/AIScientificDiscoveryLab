@@ -20,6 +20,7 @@ from kosmos.cli.utils import (
     create_table,
 )
 
+from kosmos.config import _DEFAULT_CLAUDE_SONNET_MODEL, _DEFAULT_CLAUDE_HAIKU_MODEL
 
 def manage_config(
     show: bool = typer.Option(False, "--show", "-s", help="Show current configuration"),
@@ -232,7 +233,7 @@ def validate_config():
             checks.append((
                 "Claude Model",
                 config.claude.model,
-                config.claude.model in ["claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022"]
+                config.claude.model in [_DEFAULT_CLAUDE_SONNET_MODEL, _DEFAULT_CLAUDE_HAIKU_MODEL]
             ))
         elif config.openai:
             checks.append((

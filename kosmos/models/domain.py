@@ -10,6 +10,7 @@ from enum import Enum
 from typing import Dict, List, Optional, Any
 from pydantic import BaseModel, Field
 
+from kosmos.config import _DEFAULT_CLAUDE_SONNET_MODEL
 
 class ScientificDomain(str, Enum):
     """Scientific research domains supported by Kosmos."""
@@ -81,7 +82,7 @@ class DomainClassification(BaseModel):
 
     # Metadata
     classified_at: datetime = Field(default_factory=datetime.now)
-    classifier_model: str = Field(default="claude-3-5-sonnet-20241022")
+    classifier_model: str = Field(default=_DEFAULT_CLAUDE_SONNET_MODEL)
 
     def to_domain_list(self) -> List[ScientificDomain]:
         """Get all relevant domains (primary + secondary) as a list."""

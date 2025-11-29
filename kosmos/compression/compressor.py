@@ -24,6 +24,7 @@ import logging
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
+from kosmos.config import _DEFAULT_CLAUDE_SONNET_MODEL
 
 
 @dataclass
@@ -56,7 +57,7 @@ class NotebookCompressor:
                             If None, uses mock summarization (for testing)
         """
         self.client = anthropic_client
-        self.model = "claude-3-5-sonnet-20241022"
+        self.model = _DEFAULT_CLAUDE_SONNET_MODEL
 
     def compress_notebook(
         self,
@@ -327,7 +328,7 @@ class LiteratureCompressor:
     def __init__(self, anthropic_client=None):
         """Initialize literature compressor."""
         self.client = anthropic_client
-        self.model = "claude-3-5-sonnet-20241022"
+        self.model = _DEFAULT_CLAUDE_SONNET_MODEL
 
     def compress_papers(
         self,

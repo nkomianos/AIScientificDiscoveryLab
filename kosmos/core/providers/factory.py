@@ -125,6 +125,7 @@ def get_provider_from_config(kosmos_config) -> LLMProvider:
                 'max_tokens': anthropic_config.max_tokens,
                 'temperature': anthropic_config.temperature,
                 'enable_cache': anthropic_config.enable_cache,
+                'base_url': getattr(anthropic_config, 'base_url', None),
                 'enable_auto_model_selection': getattr(anthropic_config, 'enable_auto_model_selection', False)
             }
         else:
