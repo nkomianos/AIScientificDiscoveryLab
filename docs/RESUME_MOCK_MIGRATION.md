@@ -1,58 +1,51 @@
 # Resume Mock to Real Test Migration
 
 ## Context
-We are converting mock-based tests to use real LLM API calls to ensure production readiness.
+Converting mock-based tests to real LLM API calls for production readiness.
 
 ## Completed
-- **Phase 1: Core LLM tests** - All 43 tests pass with real APIs
-  - `tests/unit/core/test_llm.py` (17 tests)
-  - `tests/unit/core/test_async_llm.py` (13 tests)
-  - `tests/unit/core/test_litellm_provider.py` (13 tests)
+- **Phase 1: Core LLM tests** - 43 tests pass with real APIs
 
-## Resume Task
-Continue with **Phase 2: Knowledge Layer Tests**
+## Current Status
+Ready to continue. Most tests only need Anthropic/DeepSeek keys (which are configured).
 
-### Files to Convert
-1. `tests/unit/knowledge/test_embeddings.py` - Uses SentenceTransformer mock
-2. `tests/unit/knowledge/test_concept_extractor.py` - Uses Claude API mock
-3. `tests/unit/knowledge/test_vector_db.py` - Uses ChromaDB mock
-4. `tests/unit/knowledge/test_graph.py` - Uses Neo4j mock
+## Deferred (Waiting for Semantic Scholar API Key)
+- `tests/unit/agents/test_hypothesis_generator.py` - Uses literature search
 
-### Pattern to Follow
+## Resume Task: Phase 2 - Knowledge Layer
+
+### Files to Convert (No Semantic Scholar needed)
+1. `tests/unit/knowledge/test_embeddings.py` - SentenceTransformer
+2. `tests/unit/knowledge/test_concept_extractor.py` - Claude API
+3. `tests/unit/knowledge/test_vector_db.py` - ChromaDB
+4. `tests/unit/knowledge/test_graph.py` - Neo4j
+
+### Then Phase 3 - Agents (1 deferred)
+1. `tests/unit/agents/test_research_director.py` - Claude API
+2. `tests/unit/agents/test_literature_analyzer.py` - Claude API + Neo4j
+3. `tests/unit/agents/test_data_analyst.py` - Claude API
+4. ~~`tests/unit/agents/test_hypothesis_generator.py`~~ - DEFERRED (needs Semantic Scholar)
+
+### Pattern
 ```python
-import os
-import pytest
-import uuid
+import os, pytest, uuid
 
 pytestmark = [
     pytest.mark.requires_claude,
-    pytest.mark.skipif(
-        not os.getenv("ANTHROPIC_API_KEY"),
-        reason="Requires ANTHROPIC_API_KEY"
-    )
+    pytest.mark.skipif(not os.getenv("ANTHROPIC_API_KEY"), reason="Requires API key")
 ]
 
 def unique_prompt(base: str) -> str:
-    """Add unique suffix to avoid cache hits."""
     return f"{base} [test-id: {uuid.uuid4().hex[:8]}]"
 ```
 
-### Fixtures Available (in conftest.py)
-- `real_anthropic_client` - Anthropic client
-- `deepseek_client` - DeepSeek via LiteLLM
+### Fixtures Available
+- `real_anthropic_client`, `deepseek_client` - LLM clients
 - `real_vector_db` - Ephemeral ChromaDB
-- `real_embedder` - SentenceTransformer (all-MiniLM-L6-v2)
-- `real_knowledge_graph` - Neo4j connection
+- `real_embedder` - SentenceTransformer
+- `real_knowledge_graph` - Neo4j
 
-### API Keys Required
-- ANTHROPIC_API_KEY - Set
-- DEEPSEEK_API_KEY - Set
-- SEMANTIC_SCHOLAR_API_KEY - Pending (may be needed for literature tests)
-
-### Verification Command
+### Verify
 ```bash
-set -a && source .env && set +a && pytest tests/unit/knowledge/ -v --no-cov
+pytest tests/unit/knowledge/ -v --no-cov
 ```
-
-## Full Plan
-See: `docs/CHECKPOINT_MOCK_MIGRATION.md` and `/home/jim/.claude/plans/sprightly-finding-puddle.md`
