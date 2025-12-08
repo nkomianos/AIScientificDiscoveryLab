@@ -185,10 +185,10 @@ Three independent limits in `kosmos/config.py`:
 | Setting | Default | Range |
 |---------|---------|-------|
 | `max_parallel_hypotheses` | 3 | 1-10 |
-| `max_concurrent_experiments` | 4 | 1-16 |
+| `max_concurrent_experiments` | 10 | 1-16 |
 | `max_concurrent_llm_calls` | 5 | 1-20 |
 
-The paper describes 10 parallel tasks. Current default is 4; increase `max_concurrent_experiments` to match.
+The paper describes 10 parallel tasks. Default now matches paper specification.
 
 ### Optional Services
 
@@ -272,15 +272,24 @@ kosmos/
 | Deferred | 5% | Phase 4 production mode (polyglot persistence) |
 | Known issues | 5% | R language not supported (Python only) |
 
-### Open Issues
+### Fixed Issues (Recent)
 
-| Issue | Impact |
-|-------|--------|
-| [#66](https://github.com/jimmc414/Kosmos/issues/66) | CLI hangs on startup |
-| [#67](https://github.com/jimmc414/Kosmos/issues/67) | SkillLoader not loading domain skills |
-| [#68](https://github.com/jimmc414/Kosmos/issues/68) | Pydantic V2 migration incomplete |
+| Issue | Description | Status |
+|-------|-------------|--------|
+| [#66](https://github.com/jimmc414/Kosmos/issues/66) | CLI deadlock - async refactor | ✅ Fixed |
+| [#67](https://github.com/jimmc414/Kosmos/issues/67) | SkillLoader domain mapping | ✅ Fixed |
+| [#68](https://github.com/jimmc414/Kosmos/issues/68) | Pydantic V2 migration | ✅ Fixed |
+| [#54-#58](https://github.com/jimmc414/Kosmos/issues/54) | Critical paper gaps | ✅ Fixed |
 
-Full tracking: [PAPER_IMPLEMENTATION_GAPS.md](docs/PAPER_IMPLEMENTATION_GAPS.md) (17 gaps identified)
+### Remaining Gaps
+
+| Priority | Count | Status |
+|----------|-------|--------|
+| High | 5 | #59, #60, #61, #69, #70 |
+| Medium | 2 | #62, #63 |
+| Low | 2 | #64, #65 |
+
+Full tracking: [PAPER_IMPLEMENTATION_GAPS.md](docs/PAPER_IMPLEMENTATION_GAPS.md) (8/17 gaps complete)
 
 ### Test Coverage
 

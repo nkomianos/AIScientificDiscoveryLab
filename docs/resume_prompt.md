@@ -2,48 +2,37 @@
 
 ## Context
 
-You are resuming work on the Kosmos project after a context compaction. The previous session implemented **5 critical paper implementation gaps** (#54-#58).
+You are resuming work on the Kosmos project after a context compaction. The previous sessions implemented **8 paper implementation gaps** (3 BLOCKER + 5 Critical).
 
 ## What Was Done
 
-### Issues Fixed This Session
+### All Fixed Issues
 
 | Issue | Description | Implementation |
 |-------|-------------|----------------|
+| #66 | CLI Deadlock | Full async refactor of message passing |
+| #67 | SkillLoader | Domain-to-bundle mapping fixed |
+| #68 | Pydantic V2 | Model config migration complete |
 | #54 | Self-Correcting Code Execution | Enhanced RetryStrategy with 11 error handlers + LLM repair |
 | #55 | World Model Update Categories | UpdateType enum (CONFIRMATION/CONFLICT/PRUNING) + conflict detection |
 | #56 | 12-Hour Runtime Constraint | `max_runtime_hours` config + runtime tracking in ResearchDirector |
 | #57 | Parallel Task Execution | Changed `max_concurrent_experiments` default from 4 to 10 |
 | #58 | Agent Rollout Tracking | New RolloutTracker class + integration in ResearchDirector |
 
-### Previously Fixed (Documented)
-
-| Issue | Description |
-|-------|-------------|
-| #66 | CLI Deadlock - Full async refactor |
-| #67 | SkillLoader - Domain-to-bundle mapping |
-| #68 | Pydantic V2 - Model config migration |
-
-### Files Modified
+### Key Files Modified
 
 | File | Changes |
 |------|---------|
-| `docs/PAPER_IMPLEMENTATION_GAPS.md` | Marked #54-58, #66-68 complete (8/17 total) |
+| `docs/PAPER_IMPLEMENTATION_GAPS.md` | 8/17 gaps marked complete |
 | `kosmos/config.py` | `max_runtime_hours`, `max_concurrent_experiments=10` |
 | `kosmos/core/rollout_tracker.py` | **NEW** - RolloutTracker class |
-| `kosmos/agents/research_director.py` | Runtime tracking, rollout tracking |
+| `kosmos/agents/research_director.py` | Async, runtime tracking, rollout tracking |
 | `kosmos/world_model/artifacts.py` | UpdateType, FindingIntegrationResult, conflict detection |
 | `kosmos/execution/executor.py` | Enhanced RetryStrategy, self-correcting execution |
-| `tests/unit/world_model/test_artifacts.py` | Updated conflict detection tests |
-
-### Test Status
-
-- **69 tests pass** (research_director + artifacts)
-- All verification imports work correctly
 
 ## Remaining Work
 
-### High Priority (9 gaps remaining)
+### High Priority (5 gaps)
 
 | Issue | Description | Priority |
 |-------|-------------|----------|
@@ -53,7 +42,7 @@ You are resuming work on the Kosmos project after a context compaction. The prev
 | #69 | R Language Execution Support | High |
 | #70 | Null Model Statistical Validation | High |
 
-### Medium/Low Priority
+### Medium/Low Priority (4 gaps)
 
 | Issue | Description | Priority |
 |-------|-------------|----------|
@@ -64,7 +53,7 @@ You are resuming work on the Kosmos project after a context compaction. The prev
 
 ## Key Documentation
 
-- `docs/CHECKPOINT.md` - Full session summary with architecture diagrams
+- `docs/CHECKPOINT.md` - Full session summary
 - `docs/PAPER_IMPLEMENTATION_GAPS.md` - 17 tracked gaps (8 complete)
 - GitHub Issues #54-#70 - Detailed tracking
 
@@ -97,8 +86,10 @@ Read docs/CHECKPOINT.md and docs/PAPER_IMPLEMENTATION_GAPS.md, then ask what I'd
 
 **8/17 gaps fixed (47% complete)**
 
-- BLOCKER: 3/3 complete
-- Critical: 5/5 complete
-- High: 0/5 complete
-- Medium: 0/2 complete
-- Low: 0/2 complete
+| Priority | Status |
+|----------|--------|
+| BLOCKER | 3/3 complete ✅ |
+| Critical | 5/5 complete ✅ |
+| High | 0/5 remaining |
+| Medium | 0/2 remaining |
+| Low | 0/2 remaining |
