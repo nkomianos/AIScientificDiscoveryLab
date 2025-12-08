@@ -5,17 +5,18 @@ Loads domain-specific scientific skills from kosmos-claude-scientific-skills
 repository and injects them into agent prompts based on task requirements.
 
 Gap addressed: Gap 3 (Agent Integration & System Prompts)
-Pattern source: kosmos-claude-scientific-skills (566 skill files)
+Pattern source: kosmos-claude-scientific-skills (116 skill directories)
 
 Key Insight: Instead of generic prompts, inject domain expertise into agent
 prompts based on task requirements.
 
 Architecture:
 - Skill bundles: Pre-defined sets of related skills (e.g., "single_cell_analysis")
+- Domain mapping: High-level domains (e.g., "biology") map to relevant bundles
 - Auto-loading: Automatically select skills based on task type/domain
 - Prompt injection: Format skills for inclusion in agent prompts
 
-Performance: 120+ skills loadable by domain, improves code quality
+Performance: 116 skills loadable by domain, improves code quality
 """
 
 import logging
@@ -80,11 +81,25 @@ class SkillLoader:
         ]
     }
 
-    # Common libraries that apply to multiple domains
+    # Common skills that exist in scientific-skills directory
+    # Note: pandas, numpy, matplotlib etc. are standard imports, not skill files
     COMMON_SKILLS = [
-        "pandas", "numpy", "matplotlib", "seaborn", "plotly",
-        "scipy", "statsmodels", "jupyter-notebook"
+        "scikit-learn", "statsmodels", "polars", "dask"
     ]
+
+    # Map high-level domains to specific skill bundles
+    DOMAIN_TO_BUNDLES = {
+        "biology": ["genomics_analysis", "single_cell_analysis", "proteomics"],
+        "chemistry": ["drug_discovery"],
+        "materials": ["machine_learning"],  # Materials science uses ML
+        "neuroscience": ["neuroscience", "imaging_analysis"],
+        "clinical": ["clinical_research"],
+        "genomics": ["genomics_analysis"],
+        "single_cell": ["single_cell_analysis"],
+        "drug_discovery": ["drug_discovery"],
+        "proteomics": ["proteomics"],
+        "imaging": ["imaging_analysis"],
+    }
 
     def __init__(
         self,
@@ -163,19 +178,23 @@ class SkillLoader:
         if not self.skills_dir or not self.skills_dir.exists():
             return
 
-        # Find all .md files recursively
-        skill_files = list(self.skills_dir.glob("**/*.md"))
-        logger.info(f"Discovered {len(skill_files)} skill files")
+        # Each skill is a folder with SKILL.md inside
+        # Look for skill folders (directories that contain SKILL.md)
+        skill_count = 0
+        for skill_folder in self.skills_dir.iterdir():
+            if skill_folder.is_dir():
+                skill_file = skill_folder / "SKILL.md"
+                if skill_file.exists():
+                    skill_name = skill_folder.name  # Use folder name as skill name
+                    self.skills_cache[skill_name] = {
+                        'path': str(skill_file),
+                        'name': skill_name,
+                        'category': skill_folder.name,
+                        'loaded': False  # Lazy load content
+                    }
+                    skill_count += 1
 
-        # Load metadata (without full content for efficiency)
-        for skill_file in skill_files:
-            skill_name = skill_file.stem
-            self.skills_cache[skill_name] = {
-                'path': str(skill_file),
-                'name': skill_name,
-                'category': skill_file.parent.name,
-                'loaded': False  # Lazy load content
-            }
+        logger.info(f"Discovered {skill_count} skill directories")
 
     def load_skill(self, skill_name: str) -> Optional[Dict]:
         """
@@ -209,24 +228,35 @@ class SkillLoader:
 
             return skill_info
 
-        # Try to find skill file
+        # Try to find skill file in folder structure (skill_name/SKILL.md)
         if self.skills_dir:
-            skill_files = list(self.skills_dir.glob(f"**/{skill_name}.md"))
-            if skill_files:
-                return self.load_skill_from_file(skill_files[0])
+            skill_folder = self.skills_dir / skill_name
+            skill_file = skill_folder / "SKILL.md"
+            if skill_file.exists():
+                return self.load_skill_from_file(skill_file, skill_name)
 
-        logger.warning(f"Skill not found: {skill_name}")
+        # Don't spam warnings for missing common skills
+        if skill_name not in ['pandas', 'numpy', 'matplotlib', 'seaborn', 'plotly', 'scipy', 'jupyter-notebook']:
+            logger.warning(f"Skill not found: {skill_name}")
         return None
 
-    def load_skill_from_file(self, skill_path: Path) -> Dict:
+    def load_skill_from_file(self, skill_path: Path, skill_name: Optional[str] = None) -> Dict:
         """Load skill from specific file path."""
         try:
             with open(skill_path, 'r') as f:
                 content = f.read()
 
+            # Use provided skill_name or derive from path
+            if skill_name is None:
+                # If file is SKILL.md, use parent folder name
+                if skill_path.stem == "SKILL":
+                    skill_name = skill_path.parent.name
+                else:
+                    skill_name = skill_path.stem
+
             skill_info = {
                 'path': str(skill_path),
-                'name': skill_path.stem,
+                'name': skill_name,
                 'category': skill_path.parent.name,
                 'content': content,
                 'loaded': True
@@ -322,9 +352,16 @@ class SkillLoader:
         if task_type and task_type in self.SKILL_BUNDLES:
             skills_to_load.update(self.SKILL_BUNDLES[task_type])
 
-        # Try domain as task_type if not found
-        if domain and domain in self.SKILL_BUNDLES:
-            skills_to_load.update(self.SKILL_BUNDLES[domain])
+        # Map domain to bundles using DOMAIN_TO_BUNDLES
+        if domain:
+            domain_lower = domain.lower()
+            if domain_lower in self.DOMAIN_TO_BUNDLES:
+                for bundle_name in self.DOMAIN_TO_BUNDLES[domain_lower]:
+                    if bundle_name in self.SKILL_BUNDLES:
+                        skills_to_load.update(self.SKILL_BUNDLES[bundle_name])
+            # Also try domain directly as bundle name
+            elif domain_lower in self.SKILL_BUNDLES:
+                skills_to_load.update(self.SKILL_BUNDLES[domain_lower])
 
         # Add specific libraries
         if libraries:
