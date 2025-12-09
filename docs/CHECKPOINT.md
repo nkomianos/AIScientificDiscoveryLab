@@ -1,24 +1,57 @@
 # Kosmos Implementation Checkpoint
 
 **Date**: 2025-12-08
-**Session**: Production Readiness - Phase 2 (Output Artifacts)
+**Session**: Production Readiness - Phase 3 (Validation Quality)
 **Branch**: master
 
 ---
 
 ## Session Summary
 
-This session implemented 2 High priority paper implementation gaps as part of the production readiness roadmap:
-1. **#60 - Figure Generation**: Publication-quality figure generation using PublicationVisualizer
-2. **#61 - Jupyter Notebook Generation**: Jupyter notebook creation with embedded outputs
+This session implemented 1 High priority paper implementation gap as part of the production readiness roadmap:
+1. **#70 - Null Model Statistical Validation**: Permutation testing to validate findings against null models
 
 Previously completed (this release cycle):
 - **#59 - h5ad/Parquet Data Format Support**: Scientific data formats for single-cell RNA-seq and columnar analytics
 - **#69 - R Language Execution Support**: R code execution enabling Mendelian Randomization analyses
+- **#60 - Figure Generation**: Publication-quality figure generation using PublicationVisualizer
+- **#61 - Jupyter Notebook Generation**: Jupyter notebook creation with embedded outputs
 
 ---
 
 ## Work Completed This Session
+
+### Issue #70 - Null Model Statistical Validation ✅
+
+**Files Created/Modified**:
+- `kosmos/validation/null_model.py` - **NEW** NullModelValidator and NullModelResult classes (430+ lines)
+- `kosmos/validation/scholar_eval.py` - Integrated null model validation into evaluate_finding()
+- `kosmos/validation/__init__.py` - Exported NullModelValidator, NullModelResult
+- `kosmos/world_model/artifacts.py` - Added `null_model_result` field to Finding
+- `tests/unit/validation/test_null_model.py` - **NEW** 45 unit tests
+- `tests/integration/validation/test_null_validation.py` - **NEW** 19 integration tests
+
+**Features**:
+- `NullModelValidator` class:
+  - Permutation testing with configurable iterations (default: 1000)
+  - 4 shuffle strategies: column, row, label, residual
+  - Parametric null distributions for t, F, chi² tests
+  - Empirical p-value calculation from permutation distribution
+  - Detection of findings that persist in noise (potential false positives)
+- `NullModelResult` dataclass:
+  - Stores observed statistic, null distribution (percentiles), permutation p-value
+  - Tracks validation outcome (passes_null_test, persists_in_noise)
+  - is_valid property combining both criteria
+- ScholarEval integration:
+  - Runs null model validation automatically for findings with statistics
+  - Penalizes findings that persist in noise (50% score reduction)
+  - Added `null_model_result` and `statistical_validity` fields to ScholarEvalScore
+- Finding dataclass extended:
+  - `null_model_result: Optional[Dict]` - Null model validation results
+
+**Tests**: 64 tests (45 unit + 19 integration) - All passing
+
+---
 
 ### Issue #61 - Jupyter Notebook Generation ✅
 
@@ -93,25 +126,26 @@ Previously completed (this release cycle):
 | #57 | Parallel Task Execution (10) | ✅ FIXED |
 | #58 | Agent Rollout Tracking | ✅ FIXED |
 
-### High Priority Issues (4/5 Complete)
+### High Priority Issues (5/5 Complete)
 | Issue | Description | Status |
 |-------|-------------|--------|
 | #59 | h5ad/Parquet Data Format Support | ✅ FIXED |
 | #69 | R Language Execution Support | ✅ FIXED |
 | #60 | Figure Generation | ✅ FIXED |
 | #61 | Jupyter Notebook Generation | ✅ FIXED |
+| #70 | Null Model Statistical Validation | ✅ FIXED |
 
 ---
 
 ## Progress Summary
 
-**12/17 gaps fixed (71%)**
+**13/17 gaps fixed (76%)**
 
 | Priority | Status |
 |----------|--------|
 | BLOCKER | 3/3 Complete ✅ |
 | Critical | 5/5 Complete ✅ |
-| High | 4/5 Complete |
+| High | 5/5 Complete ✅ |
 | Medium | 0/2 Remaining |
 | Low | 0/2 Remaining |
 
@@ -122,8 +156,7 @@ Previously completed (this release cycle):
 ### Phase 3: Validation Quality
 | Order | Issue | Description |
 |-------|-------|-------------|
-| 5 | #70 | Null Model Statistical Validation | **NEXT** |
-| 6 | #63 | Failure Mode Detection |
+| 6 | #63 | Failure Mode Detection | **NEXT** |
 
 ### Phase 4: Traceability
 | Order | Issue | Description |

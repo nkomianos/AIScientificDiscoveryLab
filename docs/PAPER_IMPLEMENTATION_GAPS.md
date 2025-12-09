@@ -12,10 +12,10 @@
 |----------|-------|--------|
 | **BLOCKER** | 3 | **3/3 Complete** ✅ |
 | **Critical** | 5 | **5/5 Complete** ✅ |
-| High | 5 | **4/5 Complete** |
+| High | 5 | **5/5 Complete** ✅ |
 | Medium | 2 | 0/2 Complete |
 | Low | 2 | 0/2 Complete |
-| **Total** | **17** | **12/17 Complete** |
+| **Total** | **17** | **13/17 Complete** |
 
 > **Note**: BLOCKER priority means the system cannot run at all until fixed. These must be addressed before any other gaps.
 
@@ -458,39 +458,43 @@ Skill not found: matplotlib
 
 ---
 
-### GAP-017: Null Model Statistical Validation
+### GAP-017: Null Model Statistical Validation ✅ COMPLETE
 
 | Field | Value |
 |-------|-------|
 | **GitHub Issue** | [#70](https://github.com/jimmc414/Kosmos/issues/70) |
-| **Status** | Not Started |
+| **Status** | **Complete** (2025-12-08) |
 | **Priority** | High |
 | **Area** | Validation |
 
 **Paper Claim** (From Critique Analysis):
 > Paper used Null Models - running the exact same analysis on randomized noise data to see if the "discovery" disappears.
 
-**Current Implementation**:
-- ScholarEval is 100% LLM-based (8 subjective dimensions)
-- No statistical validation against baselines
-- No shuffled/permutation testing
-- LLM grading LLM creates "sycophancy loop"
+**Solution Implemented**:
+- Created `NullModelValidator` class with permutation testing (1000 iterations default)
+- Implemented 4 shuffle strategies: column, row, label, residual
+- Added `NullModelResult` dataclass for storing validation results
+- Integrated null model validation into ScholarEval `evaluate_finding()`
+- Findings that "persist in noise" are flagged and penalized (50% score reduction)
+- Added `null_model_result` field to Finding dataclass
+- Added `statistical_validity` score (0-1) to ScholarEvalScore
 
-**Gap**:
-- Circular validation: LLM hallucinates finding → same LLM approves it
-- No statistical ground truth
-- Cannot distinguish real findings from noise
-- Paper achieved 79.4% via human validation, not LLM
+**Files Created**:
+- `kosmos/validation/null_model.py` - NullModelValidator, NullModelResult (~430 lines)
+- `tests/unit/validation/test_null_model.py` - 45 unit tests
+- `tests/integration/validation/test_null_validation.py` - 19 integration tests
 
-**Files to Modify**:
-- `kosmos/validation/scholar_eval.py`
-- New: `kosmos/validation/null_model.py`
+**Files Modified**:
+- `kosmos/validation/scholar_eval.py` - Integrated null model validation
+- `kosmos/validation/__init__.py` - Exported NullModelValidator, NullModelResult
+- `kosmos/world_model/artifacts.py` - Added null_model_result field to Finding
 
 **Acceptance Criteria**:
-- [ ] Findings tested against null model (shuffled data)
-- [ ] P-value from permutation testing included
-- [ ] Findings that persist in noise are flagged/rejected
-- [ ] ScholarEval includes statistical validation score
+- [x] Findings tested against null model (shuffled data)
+- [x] P-value from permutation testing included (1000 permutations)
+- [x] Findings that persist in noise are flagged/rejected
+- [x] ScholarEval includes statistical validation score
+- [x] 64 tests passing (45 unit + 19 integration)
 
 **Related**: Strengthens GAP-012 (#65)
 

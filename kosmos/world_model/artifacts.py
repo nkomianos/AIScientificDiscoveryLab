@@ -71,6 +71,8 @@ class Finding:
     figure_metadata: Optional[Dict] = None  # Figure metadata: {type, caption, dpi, etc.}
     # Issue #61: Notebook tracking for research artifacts
     notebook_metadata: Optional[Dict] = None  # Notebook metadata: {kernel, line_count, cell_count, etc.}
+    # Issue #70: Null model validation for statistical grounding
+    null_model_result: Optional[Dict] = None  # Null model validation: {p_value, persists_in_noise, etc.}
 
     def to_dict(self) -> Dict:
         """Convert to dictionary for JSON serialization."""

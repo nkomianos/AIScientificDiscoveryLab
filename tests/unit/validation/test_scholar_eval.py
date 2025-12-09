@@ -26,9 +26,12 @@ def high_quality_finding():
     return {
         'summary': 'We identified 42 differentially expressed genes associated with KRAS mutations',
         'statistics': {
+            'test_type': 't_test',
+            'statistic': 4.5,  # Strong test statistic for null model validation
             'p_value': 0.001,
             'sample_size': 150,
             'effect_size': 0.85,
+            'degrees_of_freedom': 148,
             'fdr': 0.05
         },
         'methods': 'DESeq2 differential expression analysis with FDR correction',
@@ -197,7 +200,7 @@ class TestMockEvaluation:
     @pytest.mark.asyncio
     async def test_mock_evaluation_high_quality(self, scholar_validator, high_quality_finding):
         """Test mock evaluation of high quality finding."""
-        score = await scholar_validator.evaluate_finding(high_quality_finding)
+        score = scholar_validator.evaluate_finding(high_quality_finding)
 
         assert isinstance(score, ScholarEvalScore)
         # With statistics and methods, should pass
@@ -206,7 +209,7 @@ class TestMockEvaluation:
     @pytest.mark.asyncio
     async def test_mock_evaluation_low_quality(self, scholar_validator, low_quality_finding):
         """Test mock evaluation of low quality finding."""
-        score = await scholar_validator.evaluate_finding(low_quality_finding)
+        score = scholar_validator.evaluate_finding(low_quality_finding)
 
         assert isinstance(score, ScholarEvalScore)
         # May or may not pass depending on mock implementation
@@ -214,7 +217,7 @@ class TestMockEvaluation:
     @pytest.mark.asyncio
     async def test_mock_evaluation_scores_valid(self, scholar_validator, high_quality_finding):
         """Test that mock evaluation provides valid scores."""
-        score = await scholar_validator.evaluate_finding(high_quality_finding)
+        score = scholar_validator.evaluate_finding(high_quality_finding)
 
         # All scores should be between 0 and 1
         assert 0 <= score.novelty <= 1
@@ -243,7 +246,7 @@ class TestLLMEvaluation:
 
         validator = ScholarEvalValidator(anthropic_client=mock_client)
 
-        score = await validator.evaluate_finding(high_quality_finding)
+        score = validator.evaluate_finding(high_quality_finding)
 
         assert isinstance(score, ScholarEvalScore)
         mock_client.messages.create.assert_called_once()
@@ -256,7 +259,7 @@ class TestLLMEvaluation:
 
         validator = ScholarEvalValidator(anthropic_client=mock_client)
 
-        score = await validator.evaluate_finding(high_quality_finding)
+        score = validator.evaluate_finding(high_quality_finding)
 
         # Should still return a valid score (mock)
         assert isinstance(score, ScholarEvalScore)
@@ -549,7 +552,7 @@ class TestScholarEvalEdgeCases:
     @pytest.mark.asyncio
     async def test_empty_finding(self, scholar_validator):
         """Test evaluation of empty finding."""
-        score = await scholar_validator.evaluate_finding({})
+        score = scholar_validator.evaluate_finding({})
 
         assert isinstance(score, ScholarEvalScore)
 
@@ -563,7 +566,7 @@ class TestScholarEvalEdgeCases:
             'interpretation': None
         }
 
-        score = await scholar_validator.evaluate_finding(finding)
+        score = scholar_validator.evaluate_finding(finding)
 
         assert isinstance(score, ScholarEvalScore)
 
@@ -577,7 +580,7 @@ class TestScholarEvalEdgeCases:
             'statistics': {'p_value': 0.05}
         }
 
-        score = await validator.evaluate_finding(finding)
+        score = validator.evaluate_finding(finding)
 
         # Should be near threshold
         assert isinstance(score, ScholarEvalScore)
@@ -590,6 +593,6 @@ class TestScholarEvalEdgeCases:
             'statistics': {'p_value': 0.01}
         }
 
-        score = await scholar_validator.evaluate_finding(finding)
+        score = scholar_validator.evaluate_finding(finding)
 
         assert isinstance(score, ScholarEvalScore)

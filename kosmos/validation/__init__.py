@@ -27,8 +27,11 @@ Target: ~75% validation rate (typical for good research)
 """
 
 from .scholar_eval import ScholarEvalValidator, ScholarEvalScore
+from .null_model import NullModelValidator, NullModelResult
 
 __all__ = [
     "ScholarEvalValidator",
     "ScholarEvalScore",
+    "NullModelValidator",
+    "NullModelResult",
 ]

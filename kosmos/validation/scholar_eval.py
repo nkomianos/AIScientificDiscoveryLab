@@ -19,6 +19,7 @@ from typing import Dict, Optional, Any
 from dataclasses import dataclass, asdict
 
 from kosmos.config import _DEFAULT_CLAUDE_SONNET_MODEL
+from kosmos.validation.null_model import NullModelValidator, NullModelResult
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +51,9 @@ class ScholarEvalScore:
     passes_threshold: bool
     feedback: str
     reasoning: Optional[str] = None
+    # Issue #70: Null model validation results
+    null_model_result: Optional[Dict] = None  # Null model validation: {p_value, persists_in_noise, etc.}
+    statistical_validity: Optional[float] = None  # 0-1 score from null model (1.0 if passes)
 
     def to_dict(self) -> Dict:
         """Convert to dictionary for JSON serialization."""
@@ -158,6 +162,25 @@ class ScholarEvalValidator:
             # Generate feedback
             feedback = self._generate_feedback(scores, passes, finding)
 
+            # Issue #70: Run null model validation for statistical grounding
+            null_result = None
+            statistical_validity = None
+            if finding.get('statistics'):
+                try:
+                    null_validator = NullModelValidator()
+                    null_result_obj = null_validator.validate_finding(finding)
+                    null_result = null_result_obj.to_dict()
+                    statistical_validity = 1.0 if null_result_obj.passes_null_test else 0.0
+
+                    # Adjust overall score if finding fails null model test
+                    if null_result_obj.persists_in_noise:
+                        overall *= 0.5  # Penalize findings that persist in noise
+                        feedback += "\n\nWARNING: Finding persists in randomized data (potential false positive)"
+                        passes = False  # Fail validation if persists in noise
+                except Exception as e:
+                    logger.warning(f"Null model validation failed: {e}")
+                    # Continue with LLM-only validation
+
             return ScholarEvalScore(
                 novelty=scores.get('novelty', 0.5),
                 rigor=scores.get('rigor', 0.5),
@@ -170,7 +193,9 @@ class ScholarEvalValidator:
                 overall_score=overall,
                 passes_threshold=passes,
                 feedback=feedback,
-                reasoning=scores.get('reasoning', '')
+                reasoning=scores.get('reasoning', ''),
+                null_model_result=null_result,
+                statistical_validity=statistical_validity
             )
 
         except Exception as e:
@@ -427,6 +452,25 @@ Provide scores as JSON object only, no additional text."""
         overall = self._calculate_overall_score(scores)
         passes = overall >= self.threshold and scores['rigor'] >= self.min_rigor_score
 
+        # Issue #70: Run null model validation even in mock mode
+        null_result = None
+        statistical_validity = None
+        feedback_extra = ""
+        if finding.get('statistics'):
+            try:
+                null_validator = NullModelValidator()
+                null_result_obj = null_validator.validate_finding(finding)
+                null_result = null_result_obj.to_dict()
+                statistical_validity = 1.0 if null_result_obj.passes_null_test else 0.0
+
+                # Adjust scores if finding fails null model test
+                if null_result_obj.persists_in_noise:
+                    overall *= 0.5
+                    feedback_extra = "\nWARNING: Finding persists in randomized data"
+                    passes = False
+            except Exception as e:
+                logger.debug(f"Mock null model validation failed: {e}")
+
         return ScholarEvalScore(
             novelty=scores['novelty'],
             rigor=scores['rigor'],
@@ -438,8 +482,10 @@ Provide scores as JSON object only, no additional text."""
             ethics=scores['ethics'],
             overall_score=overall,
             passes_threshold=passes,
-            feedback=f"Mock evaluation: {'APPROVED' if passes else 'REJECTED'} (overall: {overall:.2f})",
-            reasoning="Mock evaluation (no LLM client provided)"
+            feedback=f"Mock evaluation: {'APPROVED' if passes else 'REJECTED'} (overall: {overall:.2f}){feedback_extra}",
+            reasoning="Mock evaluation (no LLM client provided)",
+            null_model_result=null_result,
+            statistical_validity=statistical_validity
         )
 
     def batch_evaluate(self, findings: list[Dict]) -> list[ScholarEvalScore]:
