@@ -253,6 +253,63 @@ def identify_layers(graph: Dict) -> Dict[str, List[str]]:
     return layers
 
 
+def generate_mermaid(graph: Dict, focus: Optional[str] = None) -> str:
+    """Generate a Mermaid.js graph diagram."""
+    layers = identify_layers(graph)
+    modules = graph["modules"]
+
+    lines = ["graph TD"]
+
+    # Add subgraphs for layers
+    for layer_name in ["orchestration", "core", "foundation"]:
+        layer_modules = layers.get(layer_name, [])
+        if not layer_modules:
+            continue
+
+        # Filter by focus if specified
+        if focus:
+            layer_modules = [m for m in layer_modules if focus.lower() in m.lower()]
+
+        if not layer_modules:
+            continue
+
+        lines.append(f"    subgraph {layer_name.upper()}")
+        for mod in layer_modules[:10]:  # Limit to top 10 per layer
+            # Shorten module name for display
+            short_name = mod.split(".")[-1]
+            safe_id = mod.replace(".", "_")
+            lines.append(f"        {safe_id}[{short_name}]")
+        lines.append("    end")
+
+    # Add edges for focused modules or orchestration layer
+    edges_added = set()
+    target_modules = []
+
+    if focus:
+        target_modules = [m for m in modules if focus.lower() in m.lower()]
+    else:
+        target_modules = layers.get("orchestration", [])[:5]
+
+    for mod in target_modules:
+        info = modules.get(mod, {})
+        mod_id = mod.replace(".", "_")
+
+        for imp in info.get("imports", [])[:5]:  # Limit edges
+            imp_id = imp.replace(".", "_")
+            edge = (mod_id, imp_id)
+            if edge not in edges_added:
+                lines.append(f"    {mod_id} --> {imp_id}")
+                edges_added.add(edge)
+
+    # Add circular dependency warnings
+    for a, b in graph.get("circular", []):
+        a_id = a.replace(".", "_")
+        b_id = b.replace(".", "_")
+        lines.append(f"    {a_id} <-.-> {b_id}")
+
+    return "\n".join(lines)
+
+
 def print_text_graph(graph: Dict, focus: Optional[str] = None):
     """Print a text-based dependency graph."""
     modules = graph["modules"]
@@ -339,6 +396,11 @@ def main():
         action="store_true",
         help="Output as JSON"
     )
+    parser.add_argument(
+        "--mermaid",
+        action="store_true",
+        help="Output as Mermaid.js diagram"
+    )
 
     args = parser.parse_args()
 
@@ -348,7 +410,9 @@ def main():
 
     graph = build_dependency_graph(args.directory, args.root)
 
-    if args.json:
+    if args.mermaid:
+        print(generate_mermaid(graph, args.focus))
+    elif args.json:
         # Clean up for JSON output
         output = {
             "modules": {
