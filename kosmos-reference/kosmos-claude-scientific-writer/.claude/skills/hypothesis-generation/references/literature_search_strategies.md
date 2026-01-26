@@ -1,505 +1,160 @@
 # Literature Search Strategies
 
-## Effective Techniques for Finding Scientific Evidence
-
-Comprehensive literature search is essential for grounding hypotheses in existing evidence. This reference provides strategies for both PubMed (biomedical literature) and general scientific search.
+Comprehensive literature search grounds hypotheses in existing evidence. This reference provides efficient strategies for PubMed (biomedical) and general scientific search.
 
 ## Search Strategy Framework
 
 ### Three-Phase Approach
 
-1. **Broad exploration:** Understand the landscape and identify key concepts
-2. **Focused searching:** Target specific mechanisms, theories, or findings
-3. **Citation mining:** Follow references and related articles from key papers
+1. **Broad exploration:** Understand the landscape, identify key concepts
+2. **Focused searching:** Target specific mechanisms, theories, findings
+3. **Citation mining:** Follow references from key papers
 
-### Before You Search
+### Before Searching
 
-**Clarify search goals:**
-- What aspects of the phenomenon need evidence?
-- What types of studies are most relevant (reviews, primary research, methods)?
-- What time frame is relevant (recent only, or historical context)?
-- What level of evidence is needed (mechanistic, correlational, causal)?
+Clarify: What evidence is needed? What study types are relevant? What time frame? What evidence level (mechanistic, correlational, causal)?
 
 ## PubMed Search Strategies
 
-### When to Use PubMed
+**Use PubMed for:** Biomedical/life sciences, clinical studies, molecular/cellular mechanisms, disease etiology, drug research.
 
-Use WebFetch with PubMed URLs for:
-- Biomedical and life sciences research
-- Clinical studies and medical literature
-- Molecular, cellular, and physiological mechanisms
-- Disease etiology and pathology
-- Drug and therapeutic research
+### Key Techniques
 
-### Effective PubMed Search Techniques
+**1. Start with Reviews**
+- Add "review" to search terms or use Article Type filters
+- Reviews synthesize literature and provide comprehensive reference lists
+- Example: `https://pubmed.ncbi.nlm.nih.gov/?term=wound+healing+diabetes+review`
 
-#### 1. Start with Review Articles
+**2. Use MeSH Terms**
+- Standardized vocabulary captures concept variations
+- "Myocardial Infarction" finds "heart attack," "MI," "cardiac infarction"
 
-**Why:** Reviews synthesize literature, identify key concepts, and provide comprehensive reference lists.
+**3. Boolean Operators**
+- **AND:** All terms required (`diabetes AND wound healing AND inflammation`)
+- **OR:** Any term (`(Alzheimer OR dementia) AND gut microbiome`)
+- **NOT:** Exclude (`cancer treatment NOT surgery`)
+- **Quotes:** Exact phrases (`"oxidative stress"`)
+- **Wildcards:** `gene*` finds gene, genes, genetic, genetics
 
-**Search strategy:**
-- Add "review" to search terms
-- Use PubMed filters: Article Type → Review, Systematic Review, Meta-Analysis
-- Look for recent reviews (last 2-5 years)
+**4. Filters**
+- Publication types: Clinical Trial, Meta-Analysis, Systematic Review, RCT
+- Date ranges: Recent (2-5 years) for cutting-edge, older for foundational
 
-**Example searches:**
-- `https://pubmed.ncbi.nlm.nih.gov/?term=wound+healing+diabetes+review`
-- `https://pubmed.ncbi.nlm.nih.gov/?term=gut+microbiome+cognition+systematic+review`
+**5. Similar Articles and Cited By**
+- Find one relevant paper, use "Similar articles" for related work
+- "Cited by" finds newer work building on it
 
-#### 2. Use MeSH Terms (Medical Subject Headings)
+### PubMed Search Patterns
 
-**Why:** MeSH terms are standardized vocabulary that captures concept variations.
+| Goal | Search Pattern |
+|------|----------------|
+| Mechanistic | `(mechanism OR pathway) AND [phenomenon] AND (molecular OR cellular)` |
+| Causal | `[exposure] AND [outcome] AND (randomized controlled trial OR cohort study)` |
+| Biomarkers | `[biomarker] AND [disease] AND (association OR correlation OR prediction)` |
+| Treatment | `[intervention] AND [condition] AND (efficacy OR effectiveness OR clinical trial)` |
 
-**Strategy:**
-- PubMed auto-suggests MeSH terms
-- Helps find papers using different terminology for same concept
-- More comprehensive than keyword-only searches
+## Web Search Strategies
 
-**Example:**
-- Instead of just "heart attack," use MeSH term "Myocardial Infarction"
-- Captures papers using "MI," "heart attack," "cardiac infarction," etc.
+**Use web search for:** Non-biomedical sciences, interdisciplinary topics, preprints, grey literature, cross-domain analogies.
 
-#### 3. Boolean Operators and Advanced Syntax
+### Key Techniques
 
-**AND:** Narrow search (all terms must be present)
-- `diabetes AND wound healing AND inflammation`
+**1. Target Academic Sources**
+- `site:arxiv.org` (physics, CS, math, quantitative biology)
+- `site:biorxiv.org` (biology preprints)
+- `site:edu` (academic institutions)
+- `filetype:pdf` (academic papers)
 
-**OR:** Broaden search (any term can be present)
-- `(Alzheimer OR dementia) AND gut microbiome`
-
-**NOT:** Exclude terms
-- `cancer treatment NOT surgery`
-
-**Quotes:** Exact phrases
-- `"oxidative stress"`
-
-**Wildcards:** Variations
-- `gene*` finds gene, genes, genetic, genetics
-
-#### 4. Filter by Publication Type and Date
-
-**Publication types:**
-- Clinical Trial
-- Meta-Analysis
-- Systematic Review
-- Research Support, NIH
-- Randomized Controlled Trial
-
-**Date filters:**
-- Recent work (last 2-5 years): Cutting-edge findings
-- Historical work: Foundational studies
-- Specific time periods: Track development of understanding
-
-#### 5. Use "Similar Articles" and "Cited By"
-
-**Strategy:**
-- Find one highly relevant paper
-- Click "Similar articles" for related work
-- Use cited by tools to find newer work building on it
-
-### PubMed Search Examples by Hypothesis Goal
-
-**Mechanistic understanding:**
-```
-https://pubmed.ncbi.nlm.nih.gov/?term=(mechanism+OR+pathway)+AND+[phenomenon]+AND+(molecular+OR+cellular)
-```
-
-**Causal relationships:**
-```
-https://pubmed.ncbi.nlm.nih.gov/?term=[exposure]+AND+[outcome]+AND+(randomized+controlled+trial+OR+cohort+study)
-```
-
-**Biomarkers and associations:**
-```
-https://pubmed.ncbi.nlm.nih.gov/?term=[biomarker]+AND+[disease]+AND+(association+OR+correlation+OR+prediction)
-```
-
-**Treatment effectiveness:**
-```
-https://pubmed.ncbi.nlm.nih.gov/?term=[intervention]+AND+[condition]+AND+(efficacy+OR+effectiveness+OR+clinical+trial)
-```
-
-## General Scientific Web Search Strategies
-
-### When to Use Web Search
-
-Use WebSearch for:
-- Non-biomedical sciences (physics, chemistry, materials, earth sciences)
-- Interdisciplinary topics
-- Recent preprints and unpublished work
-- Grey literature (technical reports, conference proceedings)
-- Broader context and cross-domain analogies
-
-### Effective Web Search Techniques
-
-#### 1. Use Domain-Specific Search Terms
-
-**Include field-specific terminology:**
+**2. Domain-Specific Terms**
 - Chemistry: "mechanism," "reaction pathway," "synthesis"
 - Physics: "model," "theory," "experimental validation"
-- Materials science: "properties," "characterization," "synthesis"
+- Materials: "properties," "characterization"
 - Ecology: "population dynamics," "community structure"
 
-#### 2. Target Academic Sources
-
-**Search operators:**
-- `site:arxiv.org` - Preprints (physics, CS, math, quantitative biology)
-- `site:biorxiv.org` - Biology preprints
-- `site:edu` - Academic institutions
-- `filetype:pdf` - Academic papers (often)
-
-**Example searches:**
-- `superconductivity high temperature mechanism site:arxiv.org`
-- `CRISPR off-target effects site:biorxiv.org`
-
-#### 3. Search for Authors and Labs
-
-**When you find a relevant paper:**
-- Search for the authors' other work
-- Find their lab website for unpublished work
-- Identify key research groups in the field
-
-#### 4. Use Google Scholar Approaches
-
-**Strategies:**
-- Use "Cited by" to find newer related work
-- Use "Related articles" to expand search
-- Set date ranges to focus on recent work
-- Use author: operator to find specific researchers
-
-#### 5. Combine General and Specific Terms
-
-**Structure:**
-- Specific phenomenon + general concept
-- "tomato plant growth" + "bacterial promotion"
-- "cognitive decline" + "gut microbiome"
-
-**Boolean logic:**
+**3. Boolean Logic**
 - Use quotes for exact phrases: `"spike protein mutation"`
 - Use OR for alternatives: `(transmissibility OR transmission rate)`
 - Combine: `"spike protein" AND (transmissibility OR virulence) AND mutation`
 
-## Cross-Database Search Strategies
+**4. Author/Lab Searches**
+- Find relevant paper → search author's other work → find lab website
 
-### Comprehensive Literature Search Workflow
+## Comprehensive Search Workflow
 
-1. **Start with reviews (PubMed or Web Search):**
-   - Identify key concepts and terminology
-   - Note influential papers and researchers
-   - Understand current state of field
-
-2. **Focused primary research (PubMed):**
-   - Search for specific mechanisms
-   - Find experimental evidence
-   - Identify methodologies
-
-3. **Broaden with web search:**
-   - Find related work in other fields
-   - Locate recent preprints
-   - Identify analogous systems
-
-4. **Citation mining:**
-   - Follow references from key papers
-   - Use "cited by" to find recent work
-   - Track influential studies
-
-5. **Iterative refinement:**
-   - Add new terms discovered in papers
-   - Narrow if too many results
-   - Broaden if too few relevant results
-
-## Topic-Specific Search Strategies
-
-### Mechanisms and Pathways
-
-**Goal:** Understand how something works
-
-**Search components:**
-- Phenomenon + "mechanism"
-- Phenomenon + "pathway"
-- Phenomenon + specific molecules/pathways suspected
-
-**Examples:**
-- `diabetic wound healing mechanism inflammation`
-- `autophagy pathway cancer`
-
-### Associations and Correlations
-
-**Goal:** Find what factors are related
-
-**Search components:**
-- Variable A + Variable B + "association"
-- Variable A + Variable B + "correlation"
-- Variable A + "predicts" + Variable B
-
-**Examples:**
-- `vitamin D cardiovascular disease association`
-- `gut microbiome diversity predicts cognitive function`
-
-### Interventions and Treatments
-
-**Goal:** Evidence for what works
-
-**Search components:**
-- Intervention + condition + "efficacy"
-- Intervention + condition + "randomized controlled trial"
-- Intervention + condition + "treatment outcome"
-
-**Examples:**
-- `probiotic intervention depression randomized controlled trial`
-- `exercise intervention cognitive decline efficacy`
-
-### Methods and Techniques
-
-**Goal:** How to test hypothesis
-
-**Search components:**
-- Method name + application area
-- "How to measure" + phenomenon
-- Technique + validation
-
-**Examples:**
-- `CRISPR screen cancer drug resistance`
-- `measure protein-protein interaction methods`
-
-### Analogous Systems
-
-**Goal:** Find insights from related phenomena
-
-**Search components:**
-- Mechanism + different system
-- Similar phenomenon + different organism/condition
-
-**Examples:**
-- If studying plant-microbe symbiosis: search `nitrogen fixation rhizobia legumes`
-- If studying drug resistance: search `antibiotic resistance evolution mechanisms`
+1. **Reviews first:** Identify key concepts, influential papers, current state
+2. **Focused primary research:** Specific mechanisms, experimental evidence
+3. **Broaden with web search:** Related fields, preprints, analogies
+4. **Citation mining:** Follow references, use "cited by"
+5. **Iterate:** Add new terms, narrow/broaden as needed
 
 ## Evaluating Source Quality
 
-### Primary Research Quality Indicators
+### Primary Research Quality
 
-**Strong quality signals:**
-- Published in reputable journals
-- Large sample sizes (for statistical power)
-- Pre-registered studies (reduces bias)
-- Appropriate controls and methods
-- Consistent with other findings
-- Transparent data and methods
+| Strong Signals | Red Flags |
+|----------------|-----------|
+| Reputable journals | No peer review |
+| Large sample sizes | Undisclosed conflicts |
+| Pre-registered studies | Unclear methods |
+| Appropriate controls | Extraordinary claims without evidence |
+| Transparent data | Contradicts established evidence |
 
-**Red flags:**
-- No peer review (use cautiously)
-- Conflicts of interest not disclosed
-- Methods not clearly described
-- Extraordinary claims without extraordinary evidence
-- Contradicts large body of evidence without explanation
+### Review Quality
 
-### Review Quality Indicators
+- **Systematic reviews (highest):** Pre-defined search, explicit criteria, quality assessment, meta-analysis
+- **Narrative reviews (variable):** Expert synthesis, may have selection bias, useful for context
 
-**Systematic reviews (highest quality):**
-- Pre-defined search strategy
-- Explicit inclusion/exclusion criteria
-- Quality assessment of included studies
-- Quantitative synthesis (meta-analysis)
+## Time Allocation
 
-**Narrative reviews (variable quality):**
-- Expert synthesis of field
-- May have selection bias
-- Useful for context and framing
-- Check author expertise and citations
-
-## Time Management in Literature Search
-
-### Allocate Search Time Appropriately
-
-**For straightforward hypotheses (30-60 min):**
-- 1-2 broad review articles
-- 3-5 targeted primary research papers
-- Quick web search for recent developments
-
-**For complex hypotheses (1-3 hours):**
-- Multiple reviews for different aspects
-- 10-15 primary research papers
-- Systematic search across databases
-- Citation mining from key papers
-
-**For contentious topics (3+ hours):**
-- Systematic review approach
-- Identify competing perspectives
-- Track historical development
-- Cross-reference findings
+| Hypothesis Type | Time | Scope |
+|-----------------|------|-------|
+| Straightforward | 30-60 min | 1-2 reviews, 3-5 primary papers |
+| Complex | 1-3 hours | Multiple reviews, 10-15 primary papers |
+| Contentious | 3+ hours | Systematic approach, competing perspectives |
 
 ### Diminishing Returns
 
-**Signs you've searched enough:**
-- Finding the same papers repeatedly
-- New searches yield mostly irrelevant papers
-- Sufficient evidence to support/contextualize hypotheses
-- Multiple independent lines of evidence converge
+**Stop when:** Finding same papers repeatedly, new searches yield irrelevant papers, sufficient evidence gathered, multiple lines converge.
 
-**When to search more:**
-- Major gaps in understanding remain
-- Conflicting evidence needs resolution
-- Hypothesis seems inconsistent with literature
-- Need specific methodological information
+**Search more when:** Major gaps remain, conflicting evidence unresolved, hypothesis inconsistent with literature.
 
-## Documenting Search Results
+## Common Pitfalls
 
-### Information to Capture
-
-**For each relevant paper:**
-- Full citation (authors, year, journal, title)
-- Key findings relevant to hypothesis
-- Study design and methods
-- Limitations noted by authors
-- How it relates to hypothesis
-
-### Organizing Findings
-
-**Group by:**
-- Supporting evidence for hypothesis A, B, C
-- Methodological approaches
-- Conflicting findings requiring explanation
-- Gaps in current knowledge
-
-**Synthesis notes:**
-- What is well-established?
-- What is controversial or uncertain?
-- What analogies exist in other systems?
-- What methods are commonly used?
-
-## Practical Search Workflow
-
-### Step-by-Step Process
-
-1. **Define search goals (5 min):**
-   - What aspects of phenomenon need evidence?
-   - What would support or refute hypotheses?
-
-2. **Broad review search (15-20 min):**
-   - Find 1-3 review articles
-   - Skim abstracts for relevance
-   - Note key concepts and terminology
-
-3. **Targeted primary research (30-45 min):**
-   - Search for specific mechanisms/evidence
-   - Read abstracts, scan figures and conclusions
-   - Follow most promising references
-
-4. **Cross-domain search (15-30 min):**
-   - Look for analogies in other systems
-   - Find recent preprints
-   - Identify emerging trends
-
-5. **Citation mining (15-30 min):**
-   - Follow references from key papers
-   - Use "cited by" for recent work
-   - Identify seminal studies
-
-6. **Synthesize findings (20-30 min):**
-   - Summarize evidence for each hypothesis
-   - Note patterns and contradictions
-   - Identify knowledge gaps
-
-### Iteration and Refinement
-
-**When initial search is insufficient:**
-- Broaden terms if too few results
-- Add specific mechanisms/pathways if too many results
-- Try alternative terminology
-- Search for related phenomena
-- Consult review articles for better search terms
-
-**Red flags requiring more search:**
-- Only finding weak or indirect evidence
-- All evidence comes from single lab or source
-- Evidence seems inconsistent with basic principles
-- Major aspects of phenomenon lack any relevant literature
-
-## Common Search Pitfalls
-
-### Pitfalls to Avoid
-
-1. **Confirmation bias:** Only seeking evidence supporting preferred hypothesis
-   - **Solution:** Actively search for contradicting evidence
-
-2. **Recency bias:** Only considering recent work, missing foundational studies
-   - **Solution:** Include historical searches, track development of ideas
-
-3. **Too narrow:** Missing relevant work due to restrictive terms
-   - **Solution:** Use OR operators, try alternative terminology
-
-4. **Too broad:** Overwhelmed by irrelevant results
-   - **Solution:** Add specific terms, use filters, combine concepts with AND
-
-5. **Single database:** Missing important work in other fields
-   - **Solution:** Search both PubMed and general web, try domain-specific databases
-
-6. **Stopping too soon:** Insufficient evidence to ground hypotheses
-   - **Solution:** Set minimum targets (e.g., 2 reviews + 5 primary papers per hypothesis aspect)
-
-7. **Cherry-picking:** Citing only supportive papers
-   - **Solution:** Represent full spectrum of evidence, acknowledge contradictions
+| Pitfall | Solution |
+|---------|----------|
+| **Confirmation bias** | Actively search for contradicting evidence |
+| **Recency bias** | Include historical searches, track idea development |
+| **Too narrow** | Use OR operators, try alternative terminology |
+| **Too broad** | Add specific terms, use filters, combine with AND |
+| **Single database** | Search both PubMed and web, try domain-specific databases |
+| **Stopping too soon** | Set minimums: 2 reviews + 5 primary papers per aspect |
+| **Cherry-picking** | Represent full evidence spectrum, acknowledge contradictions |
 
 ## Special Cases
 
-### Emerging Topics (Limited Literature)
+**Emerging topics (limited literature):**
+- Search analogous phenomena in related systems
+- Look for preprints and conference abstracts
+- Note limited evidence in hypothesis generation
 
-**When little published work exists:**
-- Search for analogous phenomena in related systems
-- Look for preprints (arXiv, bioRxiv)
-- Find conference abstracts and posters
-- Identify theoretical frameworks that may apply
-- Note the limited evidence in hypothesis generation
-
-### Controversial Topics (Conflicting Literature)
-
-**When evidence is contradictory:**
-- Systematically document both sides
+**Controversial topics (conflicting literature):**
+- Document both sides systematically
 - Look for methodological differences explaining conflict
-- Check for temporal trends (has understanding shifted?)
-- Identify what would resolve the controversy
-- Generate hypotheses explaining the discrepancy
+- Generate hypotheses explaining discrepancies
 
-### Interdisciplinary Topics
-
-**When spanning multiple fields:**
-- Search each field's primary databases
-- Use field-specific terminology for each domain
-- Look for bridging papers that cite across fields
-- Consider consulting domain experts
-- Translate concepts between disciplines carefully
+**Interdisciplinary topics:**
+- Search each field's databases with field-specific terminology
+- Look for bridging papers citing across fields
 
 ## Integration with Hypothesis Generation
 
-### Using Literature to Inform Hypotheses
-
-**Direct applications:**
+**Literature informs hypotheses through:**
 - Established mechanisms to apply to new contexts
 - Known pathways relevant to phenomenon
-- Similar phenomena in related systems
-- Validated methods for testing
-
-**Indirect applications:**
 - Analogies from different systems
-- Theoretical frameworks to apply
 - Gaps suggesting novel mechanisms
-- Contradictions requiring resolution
 
-### Balancing Literature Dependence
-
-**Too literature-dependent:**
-- Hypotheses merely restate known mechanisms
-- No novel insights or predictions
-- "Hypotheses" are actually established facts
-
-**Too literature-independent:**
-- Hypotheses ignore relevant evidence
-- Propose implausible mechanisms
-- Reinvent already-tested ideas
-- Inconsistent with established principles
-
-**Optimal balance:**
-- Grounded in existing evidence
-- Extend understanding in novel ways
-- Acknowledge both supporting and challenging evidence
-- Generate testable predictions beyond current knowledge
+**Balance literature dependence:**
+- Too dependent: Hypotheses merely restate known facts
+- Too independent: Hypotheses ignore relevant evidence
+- Optimal: Grounded in evidence, extend understanding in novel ways, generate testable predictions
