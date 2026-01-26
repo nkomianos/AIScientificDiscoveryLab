@@ -664,8 +664,11 @@ class RetryStrategy:
             return False
 
         # Don't retry on certain errors that can't be fixed
+        # Issue #51 fix: FileNotFoundError is terminal - use synthetic data instead
         non_retryable_errors = [
-            'SyntaxError',  # Requires code rewrite
+            'SyntaxError',           # Requires code rewrite
+            'FileNotFoundError',     # Missing data is terminal - use synthetic data
+            'DataUnavailableError',  # Custom error for missing data
         ]
 
         return error_type not in non_retryable_errors
@@ -816,20 +819,34 @@ except KeyError as e:
     results = {{'error': 'KeyError', 'details': str(e), 'status': 'failed'}}
 """
 
-    def _fix_file_not_found(self, code: str, error: str) -> str:
-        """Fix FileNotFoundError by adding existence check."""
+    def _fix_file_not_found(self, code: str, error: str) -> Optional[str]:
+        """
+        Handle FileNotFoundError - return None to indicate terminal failure.
+
+        Issue #51 fix: Instead of wrapping in a try-except that produces a failed
+        result (which causes infinite loops), we return None to signal that this
+        error cannot be fixed by retry. The caller should use synthetic data or
+        fail gracefully.
+
+        Args:
+            code: Original code
+            error: Error message
+
+        Returns:
+            None to indicate no fix possible - caller should handle differently
+        """
         import re as regex_module
         # Try to extract the file path from error
         match = regex_module.search(r"'([^']+)'", error)
-        file_path = match.group(1) if match else "data_file"
+        file_path = match.group(1) if match else "unknown"
 
-        return f"""import os
-if not os.path.exists('{file_path}'):
-    print(f"File not found: '{file_path}'. Creating empty result.")
-    results = {{'error': 'FileNotFoundError', 'file': '{file_path}', 'status': 'failed'}}
-else:
-{self._indent(code, 4)}
-"""
+        logger.error(
+            f"FileNotFoundError is terminal - data file missing: {file_path}. "
+            "Code templates should use synthetic data generation (Issue #51)."
+        )
+
+        # Return None to indicate no fix possible - this is a terminal error
+        return None
 
     def _fix_name_error(self, code: str, error: str) -> str:
         """Fix NameError by adding missing imports or definitions."""

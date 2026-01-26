@@ -30,6 +30,7 @@ from kosmos.core.workflow import (
     WorkflowState,
     NextAction
 )
+from kosmos.core.convergence import ConvergenceDetector, StoppingDecision, StoppingReason
 from kosmos.core.llm import get_client
 from kosmos.core.stage_tracker import get_stage_tracker
 from kosmos.models.hypothesis import Hypothesis, HypothesisStatus
@@ -150,6 +151,17 @@ class ResearchDirectorAgent(BaseAgent):
 
         # Agent rollout tracking (Issue #58)
         self.rollout_tracker = RolloutTracker()
+
+        # Convergence detector - direct call, not message-based (Issue #76 fix)
+        self.convergence_detector = ConvergenceDetector(
+            mandatory_criteria=self.mandatory_stopping_criteria,
+            optional_criteria=self.optional_stopping_criteria,
+            config={
+                "novelty_decline_threshold": self.config.get("novelty_decline_threshold", 0.3),
+                "novelty_decline_window": self.config.get("novelty_decline_window", 5),
+                "cost_per_discovery_threshold": self.config.get("cost_per_discovery_threshold", 1000.0)
+            }
+        )
 
         # Research history
         self.iteration_history: List[Dict[str, Any]] = []
@@ -959,6 +971,10 @@ class ResearchDirectorAgent(BaseAgent):
         """
         Handle response from ConvergenceDetector.
 
+        DEPRECATED (Issue #76): This method is no longer called.
+        Convergence is now checked directly via _handle_convergence_action().
+        Kept for backwards compatibility if message-based approach is reintroduced.
+
         Expected content:
         - should_converge: bool
         - reason: str (why convergence detected)
@@ -1184,41 +1200,135 @@ class ResearchDirectorAgent(BaseAgent):
         logger.debug(f"Sent {action} request to HypothesisRefiner for hypothesis {hypothesis_id}")
         return message
 
-    async def _send_to_convergence_detector(
-        self,
-        context: Optional[Dict[str, Any]] = None
-    ) -> AgentMessage:
-        """Send request to ConvergenceDetector to check if research is complete asynchronously."""
-        # Use model_dump() for Pydantic v2, fall back to dict() for v1
+    def _check_convergence_direct(self) -> StoppingDecision:
+        """
+        Check convergence directly using ConvergenceDetector utility class.
+
+        Issue #76 fix: ConvergenceDetector is not an agent that can receive messages.
+        We call it directly instead of using message passing which silently failed.
+
+        Returns:
+            StoppingDecision: Decision on whether to stop research
+        """
+        # Get hypotheses and results from research plan
+        # Note: For convergence checks, we primarily need counts, not full objects
+        # The ConvergenceDetector's mandatory checks (iteration_limit, no_testable_hypotheses)
+        # work with research_plan data, which already has what we need
+
+        hypotheses = []
+        results = []
+
+        # Try to load actual hypothesis objects if available
         try:
-            research_plan_dict = model_to_dict(self.research_plan)
-        except AttributeError:
-            research_plan_dict = self.research_plan.dict()
+            from kosmos.db import get_session
+            from kosmos.db.models import HypothesisModel
+            from kosmos.models.hypothesis import Hypothesis
 
-        content = {
-            "action": "check_convergence",
-            "research_plan": research_plan_dict,
-            "context": context or {}
-        }
+            with get_session() as session:
+                # Get hypotheses for this research (limited to avoid memory issues)
+                hyp_ids = list(self.research_plan.hypothesis_pool)[:100]
+                if hyp_ids:
+                    db_hyps = session.query(HypothesisModel).filter(
+                        HypothesisModel.id.in_(hyp_ids)
+                    ).all()
+                    hypotheses = [
+                        Hypothesis(
+                            id=h.id,
+                            research_question=h.research_question or self.research_question,
+                            statement=h.statement,
+                            rationale=h.rationale or "",
+                            domain=h.domain or self.domain or "general"
+                        )
+                        for h in db_hyps
+                    ]
+        except Exception as e:
+            logger.debug(f"Could not load hypotheses for convergence check: {e}")
 
-        target_agent = self.agent_registry.get("ConvergenceDetector", "convergence_detector")
-
-        message = await self.send_message(
-            to_agent=target_agent,
-            content=content,
-            message_type=MessageType.REQUEST
+        # Perform convergence check
+        decision = self.convergence_detector.check_convergence(
+            research_plan=self.research_plan,
+            hypotheses=hypotheses,
+            results=results
         )
 
-        self.pending_requests[message.id] = {
-            "agent": "ConvergenceDetector",
-            "timestamp": datetime.utcnow()
-        }
+        logger.info(f"[CONVERGENCE] Decision: should_stop={decision.should_stop}, reason={decision.reason.value}")
+
+        return decision
+
+    async def _handle_convergence_action(self):
+        """
+        Handle CONVERGE action by checking convergence directly.
+
+        Issue #76 fix: Replaces message-based convergence check with direct call.
+        The ConvergenceDetector is a utility class, not an agent that can receive messages.
+        """
+        decision = self._check_convergence_direct()
 
         # Track rollout - convergence often involves literature review (Issue #58)
         self.rollout_tracker.increment("literature")
 
-        logger.debug("Sent convergence check request to ConvergenceDetector")
-        return message
+        if decision.should_stop:
+            logger.info(f"Convergence detected: {decision.reason.value}")
+
+            # Update research plan (thread-safe)
+            with self._research_plan_context():
+                self.research_plan.has_converged = True
+                self.research_plan.convergence_reason = decision.reason.value
+
+            # Add convergence annotation to research question in knowledge graph
+            if self.wm and self.question_entity_id:
+                try:
+                    from kosmos.world_model.models import Annotation
+                    convergence_annotation = Annotation(
+                        text=f"Research converged: {decision.reason.value}",
+                        created_by="ConvergenceDetector"
+                    )
+                    self.wm.add_annotation(self.question_entity_id, convergence_annotation)
+                    logger.debug("Added convergence annotation to research question")
+                except Exception as e:
+                    logger.warning(f"Failed to add convergence annotation: {e}")
+
+            # Transition to converged state (thread-safe)
+            with self._workflow_context():
+                self.workflow.transition_to(
+                    WorkflowState.CONVERGED,
+                    action=f"Research converged: {decision.reason.value}"
+                )
+
+            # Stop the director
+            self.stop()
+        else:
+            logger.debug(f"Convergence check: not yet converged ({decision.details})")
+            # Continue research - increment iteration if we've completed a full cycle
+            if self._actions_this_iteration > 0:
+                with self._research_plan_context():
+                    self.research_plan.increment_iteration()
+                self._actions_this_iteration = 0
+                logger.info(f"[ITERATION] Continuing to iteration {self.research_plan.iteration_count}")
+
+    async def _send_to_convergence_detector(
+        self,
+        context: Optional[Dict[str, Any]] = None
+    ) -> AgentMessage:
+        """
+        DEPRECATED (Issue #76): Use _handle_convergence_action() instead.
+
+        This method sent messages to a non-existent agent, causing infinite loops.
+        Kept for backwards compatibility but now calls the direct method.
+        """
+        logger.warning(
+            "[DEPRECATED] _send_to_convergence_detector is deprecated. "
+            "Using direct convergence check instead (Issue #76)."
+        )
+        await self._handle_convergence_action()
+
+        # Return a dummy message for compatibility
+        return AgentMessage(
+            type=MessageType.RESPONSE,
+            from_agent="convergence_detector",
+            to_agent=self.agent_id,
+            content={"deprecated": True, "handled_directly": True}
+        )
 
     # ========================================================================
     # PROMPT BUILDING
@@ -1925,8 +2035,9 @@ Provide a structured, actionable plan in 2-3 paragraphs.
         elif action == NextAction.CONVERGE:
             # Bug C fix (Issue #51): Don't increment iteration for convergence check
             # Convergence is a check, not a new research cycle
+            # Issue #76 fix: Call convergence detector directly instead of message passing
             logger.info(f"[CONVERGE] Checking convergence at iteration {self.research_plan.iteration_count}")
-            await self._send_to_convergence_detector()
+            await self._handle_convergence_action()
 
         elif action == NextAction.PAUSE:
             self.pause()
