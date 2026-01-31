@@ -19,6 +19,29 @@ Kosmos is an open-source implementation of an autonomous AI scientist that can:
 
 The system runs autonomous research cycles, generating tasks, executing analyses, and synthesizing findings into validated discoveries.
 
+## Virtual BioLab Adaptation
+
+This repository includes a **Virtual BioLab** extension that transforms Kosmos into a computational drug discovery platform. The BioLab adds three specialized instruments for the full drug discovery loop:
+
+1. **Structure Prediction** - Predict 3D protein structures from amino acid sequences using ESMFold
+2. **Molecular Docking** - Dock small molecules to protein targets using AutoDock Vina
+3. **Molecular Dynamics** - Simulate protein/complex stability using OpenMM
+
+### BioLab Features
+
+- **Specialized Docker Environment** (`kosmos-biolab:latest`) with all computational biology dependencies pre-installed
+- **High-Level Tool Functions** in `kosmos/tools/bio_lab.py` that handle file I/O automatically
+- **Agent Integration** - LLM agents are aware of these capabilities and can design drug discovery experiments
+- **Discovery Loop Workflow** - Agents follow: Predict Structure → Dock Molecules → Simulate Stability → Analyze Results
+
+The BioLab tools are designed to be called by the AI scientist agent within the Docker sandbox, enabling autonomous computational drug discovery experiments. See [`kosmos/tools/bio_lab.py`](kosmos/tools/bio_lab.py) for implementation details.
+
+**Building the BioLab Image:**
+```bash
+cd docker/sandbox
+docker build -t kosmos-biolab:latest -f Dockerfile.biolab .
+```
+
 ## Quick Start
 
 ### Requirements
@@ -104,6 +127,7 @@ kosmos doctor
 | Research Loop | Multi-cycle autonomous research with hypothesis generation | Complete |
 | Literature Search | ArXiv, PubMed, Semantic Scholar integration | Complete |
 | Code Execution | Docker-sandboxed Jupyter notebooks | Complete |
+| Virtual BioLab | Computational drug discovery tools (structure prediction, docking, MD) | Complete |
 | Knowledge Graph | Neo4j-based relationship storage (optional) | Complete |
 | Context Compression | Query-based hierarchical compression (20:1 ratio) | Complete |
 | Discovery Validation | 8-dimension ScholarEval quality framework | Complete |
