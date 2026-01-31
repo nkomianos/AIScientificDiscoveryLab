@@ -1,0 +1,127 @@
+# =============================================================================
+# Kosmos Virtual BioLab - Computational Biology Sandbox
+# =============================================================================
+#
+# Specialized environment for drug discovery and computational biology:
+# - Structure Prediction (ESMFold via HuggingFace Transformers)
+# - Molecular Docking (AutoDock Vina + Meeko + RDKit)
+# - Molecular Dynamics (OpenMM + PDBFixer)
+#
+# Build:
+#   docker build -t kosmos-biolab:latest -f Dockerfile.biolab .
+#
+# Run:
+#   docker run --rm kosmos-biolab:latest python3 -c "import openmm; print('OK')"
+#
+# =============================================================================
+
+FROM condaforge/mambaforge:latest
+
+LABEL maintainer="kosmos-ai"
+LABEL description="Virtual BioLab environment for computational drug discovery"
+LABEL version="1.0"
+
+# Set working directory
+WORKDIR /workspace
+
+# =============================================================================
+# Install Conda/Mamba packages (complex C/C++ dependencies)
+# =============================================================================
+
+# Install core computational biology packages via conda-forge
+RUN mamba install -y -c conda-forge \
+    # Molecular Dynamics
+    openmm=8.1.1 \
+    pdbfixer \
+    mdtraj \
+    # Cheminformatics
+    rdkit=2023.09.4 \
+    # Molecular Docking
+    autodock-vina \
+    meeko \
+    # Molecular file format handling
+    openbabel \
+    # Scientific computing
+    numpy=1.26.4 \
+    scipy=1.12.0 \
+    pandas=2.2.1 \
+    # Utilities
+    biopython \
+    && mamba clean -a -y
+
+# =============================================================================
+# Install Python packages (ML/AI for structure prediction)
+# =============================================================================
+
+# Install PyTorch (CPU version for broad compatibility)
+# For GPU: replace with appropriate CUDA version
+RUN pip install --no-cache-dir \
+    torch==2.2.0 --index-url https://download.pytorch.org/whl/cpu
+
+# Install HuggingFace ecosystem for ESMFold
+RUN pip install --no-cache-dir \
+    transformers==4.38.0 \
+    accelerate==0.27.0 \
+    huggingface_hub==0.21.0
+
+# Install additional utilities
+RUN pip install --no-cache-dir \
+    pydantic==2.6.3 \
+    httpx==0.27.0
+
+# =============================================================================
+# Pre-download ESMFold model weights (optional - large ~2GB)
+# Uncomment if you want models cached in image (increases build time/size)
+# =============================================================================
+# RUN python3 -c "from transformers import EsmForProteinFolding; \
+#     EsmForProteinFolding.from_pretrained('facebook/esmfold_v1')"
+
+# =============================================================================
+# Setup execution environment
+# =============================================================================
+
+# Create non-root user for code execution (security)
+RUN useradd -m -u 1000 -s /bin/bash biolab && \
+    chown -R biolab:biolab /workspace && \
+    mkdir -p /home/biolab/.local /home/biolab/.cache && \
+    chown -R biolab:biolab /home/biolab
+
+# Create output directories
+RUN mkdir -p /workspace/output /workspace/data /workspace/structures && \
+    chown -R biolab:biolab /workspace
+
+# Switch to non-root user
+USER biolab
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    MPLBACKEND=Agg \
+    HOME=/home/biolab \
+    PATH="/home/biolab/.local/bin:$PATH" \
+    OPENMM_CPU_THREADS=2 \
+    OMP_NUM_THREADS=2
+
+# Health check to verify bio packages are installed
+HEALTHCHECK --interval=60s --timeout=30s --start-period=10s --retries=3 \
+    CMD python3 -c "import openmm; import rdkit; from vina import Vina; print('BioLab OK')" || exit 1
+
+# Default command
+CMD ["python3", "--version"]
+
+# =============================================================================
+# Build Notes
+# =============================================================================
+#
+# Image size: ~4-6GB (due to conda packages + PyTorch)
+# Memory requirements: 
+#   - ESMFold inference: ~8GB RAM (more for long sequences)
+#   - OpenMM simulation: ~2-4GB RAM depending on system size
+#   - Vina docking: ~1GB RAM
+#
+# GPU Support:
+#   To enable GPU acceleration, modify the torch install line:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu121
+#   And ensure the container is run with --gpus all
+#
+# =============================================================================
