@@ -31,10 +31,26 @@ class ContainerStatus(Enum):
     STOPPED = "stopped"
 
 
+class SandboxImageType(Enum):
+    """Types of sandbox Docker images available."""
+    STANDARD = "standard"       # Base scientific computing
+    BIOLAB = "biolab"           # Computational biology (OpenMM, RDKit, Vina, ESMFold)
+    R_LANG = "r_lang"           # R language support
+
+
+# Image name mapping
+SANDBOX_IMAGES = {
+    SandboxImageType.STANDARD: "kosmos-sandbox:latest",
+    SandboxImageType.BIOLAB: "kosmos-biolab:latest",
+    SandboxImageType.R_LANG: "kosmos-sandbox-r:latest",
+}
+
+
 @dataclass
 class ContainerConfig:
     """Configuration for execution containers."""
     image: str = "kosmos-sandbox:latest"
+    image_type: SandboxImageType = SandboxImageType.STANDARD
     memory_limit: str = "4g"
     cpu_limit: float = 2.0
     timeout_seconds: int = 600
@@ -49,6 +65,32 @@ class ContainerConfig:
         "/tmp": "size=512m,mode=1777",
         "/home/sandbox/.local": "size=1g,mode=755"
     })
+
+    def __post_init__(self):
+        """Set image name based on image_type if not explicitly overridden."""
+        if self.image == "kosmos-sandbox:latest" and self.image_type != SandboxImageType.STANDARD:
+            self.image = SANDBOX_IMAGES.get(self.image_type, "kosmos-sandbox:latest")
+
+    @classmethod
+    def for_biolab(cls, memory_limit: str = "8g", timeout_seconds: int = 1800) -> "ContainerConfig":
+        """
+        Create configuration optimized for BioLab workloads.
+        
+        BioLab requires more memory (ESMFold ~8GB) and longer timeouts
+        for molecular dynamics simulations.
+        """
+        return cls(
+            image=SANDBOX_IMAGES[SandboxImageType.BIOLAB],
+            image_type=SandboxImageType.BIOLAB,
+            memory_limit=memory_limit,
+            timeout_seconds=timeout_seconds,
+            # BioLab user is 'biolab' not 'sandbox'
+            tmpfs={
+                "/tmp": "size=1g,mode=1777",
+                "/home/biolab/.local": "size=2g,mode=755",
+                "/home/biolab/.cache": "size=2g,mode=755",
+            }
+        )
 
 
 @dataclass
@@ -406,6 +448,50 @@ class DockerManager:
             "unhealthy": unhealthy,
             "target_size": self._pool_size
         }
+
+
+class BioLabDockerManager(DockerManager):
+    """
+    Docker manager specialized for BioLab computational biology workloads.
+    
+    Provides optimized configuration for:
+    - Structure prediction (ESMFold) - requires ~8GB RAM
+    - Molecular docking (Vina) - requires ~1GB RAM
+    - Molecular dynamics (OpenMM) - requires ~4GB RAM, longer timeouts
+    
+    Usage:
+        manager = BioLabDockerManager()
+        await manager.initialize_pool()
+        
+        async with manager.container_context() as container:
+            # Run BioLab experiments
+            pass
+    """
+    
+    def __init__(
+        self,
+        memory_limit: str = "8g",
+        timeout_seconds: int = 1800,  # 30 minutes for MD simulations
+        pool_size: int = 2  # Fewer containers due to memory requirements
+    ):
+        """
+        Initialize BioLab Docker manager.
+        
+        Args:
+            memory_limit: Memory limit per container (default 8GB for ESMFold)
+            timeout_seconds: Execution timeout (default 30 min for simulations)
+            pool_size: Number of containers to keep warm (default 2)
+        """
+        config = ContainerConfig.for_biolab(
+            memory_limit=memory_limit,
+            timeout_seconds=timeout_seconds
+        )
+        super().__init__(config=config, pool_size=pool_size)
+        
+        logger.info(
+            f"BioLabDockerManager initialized: image={config.image}, "
+            f"memory={memory_limit}, timeout={timeout_seconds}s"
+        )
 
     def __del__(self):
         """Cleanup on deletion."""
