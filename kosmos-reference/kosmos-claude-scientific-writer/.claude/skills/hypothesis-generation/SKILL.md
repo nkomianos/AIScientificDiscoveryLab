@@ -1,6 +1,6 @@
 ---
 name: hypothesis-generation
-description: "Generate testable hypotheses. Formulate from observations, design experiments, explore competing explanations, develop predictions, propose mechanisms, for scientific inquiry across domains."
+description: "Generate testable hypotheses from observations. Use for formulating research questions, designing experiments, exploring competing explanations, developing predictions, and proposing mechanisms. Triggers: generate hypothesis, formulate hypothesis, research question, experimental design, competing explanations, mechanistic hypothesis, testable predictions, scientific inquiry."
 ---
 
 # Scientific Hypothesis Generation
@@ -9,15 +9,22 @@ description: "Generate testable hypotheses. Formulate from observations, design 
 
 Hypothesis generation is a systematic process for developing testable explanations. Formulate evidence-based hypotheses from observations, design experiments, explore competing explanations, and develop predictions. Apply this skill for scientific inquiry across domains.
 
-## When to Use This Skill
+## Table of Contents
 
-This skill should be used when:
-- Developing hypotheses from observations or preliminary data
-- Designing experiments to test scientific questions
-- Exploring competing explanations for phenomena
-- Formulating testable predictions for research
-- Conducting literature-based hypothesis generation
-- Planning mechanistic studies across scientific domains
+- [When to Use](#when-to-use)
+- [Workflow](#workflow)
+- [Quality Standards](#quality-standards)
+- [Resources](#resources)
+
+## When to Use
+
+Use this skill to:
+- Develop hypotheses from observations or preliminary data
+- Design experiments to test scientific questions
+- Explore competing explanations for phenomena
+- Formulate testable predictions for research
+- Conduct literature-based hypothesis generation
+- Plan mechanistic studies across scientific domains
 
 ## Workflow
 
