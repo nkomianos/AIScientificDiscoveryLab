@@ -53,6 +53,7 @@ def run_research(
     domain: Optional[str] = typer.Option(None, "--domain", "-d", help="Research domain (biology, neuroscience, materials, etc.)"),
     max_iterations: int = typer.Option(10, "--max-iterations", "-i", help="Maximum number of research iterations"),
     budget: Optional[float] = typer.Option(None, "--budget", "-b", help="Budget limit in USD"),
+    data_path: Optional[Path] = typer.Option(None, "--data-path", "-D", help="Path to CSV dataset for experiments"),
     no_cache: bool = typer.Option(False, "--no-cache", help="Disable caching"),
     interactive: bool = typer.Option(False, "--interactive", help="Use interactive mode"),
     output: Optional[Path] = typer.Option(None, "--output", "-o", help="Save results to file (JSON or Markdown)"),
@@ -100,6 +101,11 @@ def run_research(
     # Validate inputs
     if not question:
         print_error("No research question provided. Use --interactive or provide a question.")
+        raise typer.Exit(1)
+
+    # Validate data_path if provided
+    if data_path and not data_path.exists():
+        print_error(f"Data file not found: {data_path}")
         raise typer.Exit(1)
 
     # Show starting message
@@ -158,6 +164,9 @@ def run_research(
             # LLM provider settings
             "llm_provider": config_obj.llm_provider,
             "enable_cache": cache_enabled,
+
+            # Dataset path
+            "data_path": str(data_path.resolve()) if data_path else None,
         }
 
         # Create research director

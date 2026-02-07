@@ -189,7 +189,12 @@ class LiteLLMConfig(BaseSettings):
         alias="LITELLM_TIMEOUT"
     )
 
-    model_config = SettingsConfigDict(populate_by_name=True)
+    model_config = SettingsConfigDict(
+        populate_by_name=True,
+        env_file=str(Path(__file__).parent.parent / ".env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
 
 class ResearchConfig(BaseSettings):
