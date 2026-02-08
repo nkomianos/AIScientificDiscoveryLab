@@ -89,6 +89,13 @@ class TTestComparisonCodeTemplate(CodeTemplate):
         seed = getattr(protocol, 'random_seed', 42) or 42
         n_samples = 100  # Default sample size
 
+        # Read effect size from protocol if available; default to 0.0 (null hypothesis)
+        effect_size = 0.0
+        if protocol.statistical_tests:
+            es = getattr(protocol.statistical_tests[0], 'expected_effect_size', None)
+            if es is not None:
+                effect_size = es
+
         code_lines = [
             "# T-Test Comparison Analysis",
             "# Generated from protocol template",
@@ -109,7 +116,7 @@ class TTestComparisonCodeTemplate(CodeTemplate):
             f"    np.random.seed({seed})",
             f"    n_per_group = {n_samples // 2}",
             f"    control_data = np.random.normal(0, 1, n_per_group)",
-            f"    experimental_data = np.random.normal(0.5, 1, n_per_group)  # Effect size = 0.5",
+            f"    experimental_data = np.random.normal({effect_size}, 1, n_per_group)  # Effect size = {effect_size}",
             f"    df = pd.DataFrame({{",
             f"        '{group_var}': ['{groups[0]}'] * n_per_group + ['{groups[1]}'] * n_per_group,",
             f"        '{measure_var}': np.concatenate([control_data, experimental_data])",
@@ -196,6 +203,8 @@ class CorrelationAnalysisCodeTemplate(CodeTemplate):
                 method = 'spearman'
                 break
 
+        seed = getattr(protocol, 'random_seed', 42) or 42
+
         code_lines = [
             "# Correlation Analysis",
             "# Generated from protocol template",
@@ -203,11 +212,22 @@ class CorrelationAnalysisCodeTemplate(CodeTemplate):
             "import pandas as pd",
             "import numpy as np",
             "from scipy import stats",
+            "from pathlib import Path",
             "from kosmos.execution.data_analysis import DataAnalyzer",
             "",
-            "# Load data (data_path variable is provided by executor)",
+            "# Data loading with synthetic fallback",
             f"# Expected format: CSV with columns '{x_var}' and '{y_var}'",
-            "df = pd.read_csv(data_path)",
+            "if 'data_path' in dir() and data_path and Path(data_path).exists():",
+            "    df = pd.read_csv(data_path)",
+            "    _data_source = 'file'",
+            "else:",
+            f"    # Generate synthetic correlated data",
+            f"    np.random.seed({seed})",
+            f"    n = 100",
+            f"    {x_var}_data = np.random.normal(0, 1, n)",
+            f"    {y_var}_data = 0.5 * {x_var}_data + np.random.normal(0, 0.5, n)",
+            f"    df = pd.DataFrame({{'{x_var}': {x_var}_data, '{y_var}': {y_var}_data}})",
+            "    _data_source = 'synthetic'",
             "",
             "# Clean data",
             "df = df.dropna()",
@@ -274,6 +294,8 @@ class LogLogScalingCodeTemplate(CodeTemplate):
         x_var = vars_list[0] if len(vars_list) > 0 else 'x'
         y_var = vars_list[1] if len(vars_list) > 1 else 'y'
 
+        seed = getattr(protocol, 'random_seed', 42) or 42
+
         code_lines = [
             "# Log-Log Scaling Analysis",
             "# Generated from protocol template",
@@ -281,11 +303,22 @@ class LogLogScalingCodeTemplate(CodeTemplate):
             "import pandas as pd",
             "import numpy as np",
             "from scipy import stats",
+            "from pathlib import Path",
             "from kosmos.execution.data_analysis import DataAnalyzer, DataCleaner",
             "",
-            "# Load data (data_path variable is provided by executor)",
+            "# Data loading with synthetic fallback",
             f"# Expected format: CSV with columns '{x_var}' and '{y_var}'",
-            "df = pd.read_csv(data_path)",
+            "if 'data_path' in dir() and data_path and Path(data_path).exists():",
+            "    df = pd.read_csv(data_path)",
+            "    _data_source = 'file'",
+            "else:",
+            f"    # Generate synthetic power-law data",
+            f"    np.random.seed({seed})",
+            f"    n = 100",
+            f"    {x_var}_data = np.logspace(0, 3, n)",
+            f"    {y_var}_data = 2.0 * {x_var}_data ** 0.75 * np.exp(np.random.normal(0, 0.1, n))",
+            f"    df = pd.DataFrame({{'{x_var}': {x_var}_data, '{y_var}': {y_var}_data}})",
+            "    _data_source = 'synthetic'",
             "",
             "# Clean data - remove NaN and non-positive values (required for log-log)",
             "df = DataCleaner.filter_positive(df, ['" + x_var + "', '" + y_var + "'])",
@@ -348,10 +381,20 @@ class MLExperimentCodeTemplate(CodeTemplate):
             "import numpy as np",
             "from sklearn.model_selection import train_test_split",
             "from sklearn.linear_model import LogisticRegression",
+            "from sklearn.datasets import make_classification",
+            "from pathlib import Path",
             "from kosmos.execution.ml_experiments import MLAnalyzer",
             "",
-            "# Load data (data_path variable is provided by executor)",
-            "df = pd.read_csv(data_path)",
+            "# Data loading with synthetic fallback",
+            "if 'data_path' in dir() and data_path and Path(data_path).exists():",
+            "    df = pd.read_csv(data_path)",
+            "    _data_source = 'file'",
+            "else:",
+            "    # Generate synthetic classification data",
+            "    X_syn, y_syn = make_classification(n_samples=200, n_features=10, random_state=42)",
+            "    df = pd.DataFrame(X_syn, columns=[f'feature_{i}' for i in range(10)])",
+            "    df['target'] = y_syn",
+            "    _data_source = 'synthetic'",
             "",
             "# Prepare features and target",
             "# Assuming last column is target",

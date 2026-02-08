@@ -215,7 +215,8 @@ class ConvergenceDetector:
         self,
         research_plan: ResearchPlan,
         hypotheses: List[Hypothesis],
-        results: List[ExperimentResult]
+        results: List[ExperimentResult],
+        total_cost: Optional[float] = None
     ) -> StoppingDecision:
         """
         Check if research should stop.
@@ -224,6 +225,7 @@ class ConvergenceDetector:
             research_plan: Current research plan
             hypotheses: All hypotheses
             results: All experiment results
+            total_cost: Optional accumulated cost from LLM provider
 
         Returns:
             StoppingDecision: Decision on whether to stop
@@ -231,7 +233,7 @@ class ConvergenceDetector:
         logger.info("Checking convergence criteria")
 
         # Update metrics
-        self._update_metrics(research_plan, hypotheses, results)
+        self._update_metrics(research_plan, hypotheses, results, total_cost=total_cost)
 
         # Check mandatory criteria first
         for criterion in self.mandatory_criteria:
@@ -495,7 +497,8 @@ class ConvergenceDetector:
         self,
         research_plan: ResearchPlan,
         hypotheses: List[Hypothesis],
-        results: List[ExperimentResult]
+        results: List[ExperimentResult],
+        total_cost: Optional[float] = None
     ):
         """Update all metrics."""
 
@@ -522,8 +525,10 @@ class ConvergenceDetector:
         self.metrics.iteration_count = research_plan.iteration_count
         self.metrics.max_iterations = research_plan.max_iterations
 
-        # Cost metrics (simplified - would need actual cost tracking)
-        if self.metrics.significant_results > 0:
+        # Cost metrics
+        if total_cost is not None:
+            self.metrics.total_cost = total_cost
+        if self.metrics.significant_results > 0 and self.metrics.total_cost > 0:
             self.metrics.cost_per_discovery = self.metrics.total_cost / self.metrics.significant_results
         else:
             self.metrics.cost_per_discovery = None

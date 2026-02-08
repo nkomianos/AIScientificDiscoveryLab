@@ -97,6 +97,9 @@ class ResearchDirectorAgent(BaseAgent):
         self.skills: Optional[str] = None
         self._load_skills()
 
+        # Dataset path for experiments
+        self.data_path = self.config.get("data_path")
+
         # Configuration
         self.max_iterations = self.config.get("max_iterations", 10)
         self.max_runtime_hours = self.config.get("max_runtime_hours", 12.0)  # Issue #56
@@ -1105,10 +1108,14 @@ class ResearchDirectorAgent(BaseAgent):
         context: Optional[Dict[str, Any]] = None
     ) -> AgentMessage:
         """Send request to Executor to run experiment asynchronously."""
+        exec_context = context or {}
+        if self.data_path:
+            exec_context["data_path"] = self.data_path
+
         content = {
             "action": "execute_experiment",
             "protocol_id": protocol_id,
-            "context": context or {}
+            "context": exec_context
         }
 
         target_agent = self.agent_registry.get("Executor", "executor")
@@ -1244,11 +1251,13 @@ class ResearchDirectorAgent(BaseAgent):
         except Exception as e:
             logger.debug(f"Could not load hypotheses for convergence check: {e}")
 
-        # Perform convergence check
+        # Perform convergence check (pass accumulated LLM cost if available)
+        provider_cost = getattr(self.llm_client, 'total_cost_usd', None)
         decision = self.convergence_detector.check_convergence(
             research_plan=self.research_plan,
             hypotheses=hypotheses,
-            results=results
+            results=results,
+            total_cost=provider_cost
         )
 
         logger.info(f"[CONVERGENCE] Decision: should_stop={decision.should_stop}, reason={decision.reason.value}")
@@ -2060,12 +2069,15 @@ Provide a structured, actionable plan in 2-3 paragraphs.
         # Don't converge if we haven't generated any hypotheses yet
         # Let the state machine handle generating hypotheses first
         if not self.research_plan.hypothesis_pool:
-            # Only converge if we're past the hypothesis generation state
-            # and hypothesis generation was attempted but failed
-            if self.workflow.current_state != WorkflowState.GENERATING_HYPOTHESES:
+            # Only converge on empty pool if we've already tried generating
+            # and moved past the early pipeline stages
+            convergence_ok_states = {
+                WorkflowState.REFINING,
+                WorkflowState.ERROR,
+            }
+            if self.workflow.current_state in convergence_ok_states:
                 logger.info("No hypotheses in pool after generation attempted")
                 return True
-            # Otherwise, let it try to generate hypotheses first
             return False
 
         untested = self.research_plan.get_untested_hypotheses()

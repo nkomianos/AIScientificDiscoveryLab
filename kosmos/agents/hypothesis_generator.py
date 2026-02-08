@@ -204,6 +204,29 @@ class HypothesisGeneratorAgent(BaseAgent):
 
         logger.info(f"Generated {len(validated_hypotheses)} valid hypotheses")
 
+        # Step 4b: Novelty check (if enabled)
+        if self.require_novelty_check and validated_hypotheses:
+            try:
+                from kosmos.hypothesis.novelty_checker import NoveltyChecker
+                checker = NoveltyChecker(similarity_threshold=1.0 - self.min_novelty_score)
+                novel = []
+                for hyp in validated_hypotheses:
+                    try:
+                        report = checker.check_novelty(hyp)
+                        hyp.novelty_score = report.novelty_score
+                        if report.novelty_score >= self.min_novelty_score:
+                            novel.append(hyp)
+                        else:
+                            logger.info("Filtered low-novelty hypothesis (%.2f): %s",
+                                        report.novelty_score, hyp.statement[:60])
+                    except Exception as e:
+                        logger.warning("Novelty check failed, keeping hypothesis: %s", e)
+                        novel.append(hyp)  # Fail open
+                validated_hypotheses = novel
+                logger.info(f"After novelty filter: {len(validated_hypotheses)} hypotheses")
+            except ImportError:
+                logger.warning("NoveltyChecker unavailable, skipping novelty filter")
+
         # Step 5: Store in database if requested
         if store_in_db:
             for hyp in validated_hypotheses:

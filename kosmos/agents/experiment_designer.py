@@ -623,7 +623,28 @@ Return ONLY a JSON object with suggested enhancements (keep it concise).
         return protocol
 
     def _validate_protocol(self, protocol: ExperimentProtocol) -> Dict[str, Any]:
-        """Validate protocol for scientific rigor."""
+        """Validate protocol using ExperimentValidator with inline fallback."""
+        try:
+            from kosmos.experiments.validator import ExperimentValidator
+            validator = ExperimentValidator(
+                require_control_group=self.require_control_group,
+                require_power_analysis=self.require_power_analysis,
+                min_rigor_score=self.min_rigor_score,
+            )
+            report = validator.validate(protocol)
+            return {
+                "passed": report.validation_passed,
+                "errors": [c.message for c in report.checks_performed
+                           if c.status == "failed" and c.severity == "error"],
+                "warnings": report.recommendations,
+                "rigor_score": report.rigor_score,
+            }
+        except Exception as e:
+            logger.warning("ExperimentValidator failed, using fallback: %s", e)
+            return self._validate_protocol_inline(protocol)
+
+    def _validate_protocol_inline(self, protocol: ExperimentProtocol) -> Dict[str, Any]:
+        """Inline fallback validation for scientific rigor."""
         errors = []
         warnings = []
 
@@ -666,6 +687,10 @@ Return ONLY a JSON object with suggested enhancements (keep it concise).
         validation: Dict[str, Any]
     ) -> float:
         """Calculate scientific rigor score (0.0-1.0)."""
+        # Use ExperimentValidator's score if available
+        if "rigor_score" in validation:
+            return validation["rigor_score"]
+
         score = 1.0
 
         # Penalties for validation issues
