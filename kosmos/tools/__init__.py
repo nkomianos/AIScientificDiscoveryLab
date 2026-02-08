@@ -143,6 +143,163 @@ class ToolResult:
 # BioLab Tool Definitions
 # =============================================================================
 
+# =============================================================================
+# RNAi Tool Definitions
+# =============================================================================
+
+RNAI_TOOLS: Dict[str, ToolDefinition] = {
+    "find_essential_genes": ToolDefinition(
+        name="find_essential_genes",
+        description=(
+            "Find essential genes in a target pest organism by downloading "
+            "transcriptome data and identifying genes required for survival via "
+            "homology mapping against Drosophila Essential Genes database. "
+            "Returns gene sequences (AGCT format) suitable for RNAi targeting."
+        ),
+        category=ToolCategory.BIOLAB,
+        parameters=[
+            ToolParameter(
+                name="organism_name",
+                type="string",
+                description="Scientific or common name of pest (e.g., 'Helicoverpa zea', 'corn earworm')"
+            ),
+            ToolParameter(
+                name="data_source",
+                type="string",
+                description="Database to query: 'insectbase', 'ncbi', 'ensembl', or 'auto'",
+                required=False,
+                default="auto"
+            ),
+            ToolParameter(
+                name="essentiality_criteria",
+                type="object",
+                description="Optional criteria: min_essentiality_score, gene_functions, exclude_hypothetical",
+                required=False,
+                default=None
+            ),
+            ToolParameter(
+                name="output_dir",
+                type="string",
+                description="Directory to save downloaded data and results",
+                required=False,
+                default="/workspace/output"
+            ),
+        ],
+        returns="Dict with essential_genes list, organism_info, and metadata",
+        example_usage='find_essential_genes(organism_name="Helicoverpa zea")',
+        requires_docker_image="kosmos-biolab:latest",
+        estimated_runtime_seconds=300,
+        memory_requirements_gb=4.0,
+    ),
+    
+    "generate_sirna_candidates": ToolDefinition(
+        name="generate_sirna_candidates",
+        description=(
+            "CRITICAL: Generate valid 21-mer siRNA candidate sequences from a long "
+            "gene sequence using Reynolds Rules. This tool converts gene sequences "
+            "(typically 1000-5000bp) into targetable RNAi agents. Required immediately "
+            "after find_essential_genes - agents cannot guess valid siRNA sequences."
+        ),
+        category=ToolCategory.BIOLAB,
+        parameters=[
+            ToolParameter(
+                name="gene_sequence",
+                type="string",
+                description="Full gene sequence (DNA, AGCT format, typically 1000-5000bp)"
+            ),
+            ToolParameter(
+                name="window_size",
+                type="integer",
+                description="Length of siRNA candidates (default: 21)",
+                required=False,
+                default=21
+            ),
+            ToolParameter(
+                name="max_candidates",
+                type="integer",
+                description="Maximum number of candidates to return (default: 10)",
+                required=False,
+                default=10
+            ),
+            ToolParameter(
+                name="min_gc_content",
+                type="number",
+                description="Minimum GC content (default: 0.30)",
+                required=False,
+                default=0.30
+            ),
+            ToolParameter(
+                name="max_gc_content",
+                type="number",
+                description="Maximum GC content (default: 0.52)",
+                required=False,
+                default=0.52
+            ),
+            ToolParameter(
+                name="output_dir",
+                type="string",
+                description="Directory to save analysis results",
+                required=False,
+                default="/workspace/output"
+            ),
+        ],
+        returns="Dict with candidates list (21-mer sequences with scores), total generated, filtered count",
+        example_usage='generate_sirna_candidates(gene_sequence="AGCT..." * 1000)',
+        requires_docker_image="kosmos-biolab:latest",
+        estimated_runtime_seconds=5,
+        memory_requirements_gb=0.5,
+    ),
+    
+    "check_off_target_risk": ToolDefinition(
+        name="check_off_target_risk",
+        description=(
+            "Validate RNAi candidate sequence against protected species genomes "
+            "using BLAST search. Rejects sequences that match honeybees, monarch "
+            "butterflies, or other protected species. Returns APPROVE if 0 matches, "
+            "REJECT if matches found."
+        ),
+        category=ToolCategory.BIOLAB,
+        parameters=[
+            ToolParameter(
+                name="candidate_sequence",
+                type="string",
+                description="RNA sequence to test (21-30 nucleotides, AGCT format)"
+            ),
+            ToolParameter(
+                name="protected_species_list",
+                type="array",
+                description="List of protected species to check (default: honeybee, monarch)",
+                required=False,
+                default=None
+            ),
+            ToolParameter(
+                name="match_threshold",
+                type="integer",
+                description="Minimum consecutive matching nucleotides to trigger rejection (default: 21)",
+                required=False,
+                default=21
+            ),
+            ToolParameter(
+                name="output_dir",
+                type="string",
+                description="Directory to save BLAST results",
+                required=False,
+                default="/workspace/output"
+            ),
+        ],
+        returns="Dict with approved/rejected status, matches found, and BLAST results",
+        example_usage='check_off_target_risk(candidate_sequence="AGCTAGCTAGCTAGCTAGCTA")',
+        requires_docker_image="kosmos-biolab:latest",
+        estimated_runtime_seconds=60,
+        memory_requirements_gb=2.0,
+    ),
+}
+
+
+# =============================================================================
+# BioLab Tool Definitions
+# =============================================================================
+
 BIOLAB_TOOLS: Dict[str, ToolDefinition] = {
     "predict_structure": ToolDefinition(
         name="predict_structure",
@@ -280,6 +437,10 @@ class ToolRegistry:
         # Register built-in tools
         for name, tool_def in BIOLAB_TOOLS.items():
             self.register(tool_def)
+        
+        # Register RNAi tools
+        for name, tool_def in RNAI_TOOLS.items():
+            self.register(tool_def)
     
     def register(self, tool: ToolDefinition, handler: Optional[Callable] = None):
         """Register a tool definition and optional handler."""
@@ -354,4 +515,5 @@ __all__ = [
     "get_tool_registry",
     # Tool definitions
     "BIOLAB_TOOLS",
+    "RNAI_TOOLS",
 ]

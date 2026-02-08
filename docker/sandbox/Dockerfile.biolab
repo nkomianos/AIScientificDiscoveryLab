@@ -41,6 +41,10 @@ RUN mamba install -y -c conda-forge \
     meeko \
     # Molecular file format handling
     openbabel \
+    # Genomics & BLAST (for RNAi tools)
+    blast \
+    samtools \
+    bedtools \
     # Scientific computing
     numpy=1.26.4 \
     scipy=1.12.0 \
@@ -86,8 +90,9 @@ RUN useradd -m -u 1000 -s /bin/bash biolab && \
     mkdir -p /home/biolab/.local /home/biolab/.cache && \
     chown -R biolab:biolab /home/biolab
 
-# Create output directories
-RUN mkdir -p /workspace/output /workspace/data /workspace/structures && \
+# Create output directories and data directories for RNAi tools
+RUN mkdir -p /workspace/output /workspace/data /workspace/structures \
+             /data/blastdb /data/genomes /data/deg && \
     chown -R biolab:biolab /workspace
 
 # Switch to non-root user
@@ -104,7 +109,8 @@ ENV PYTHONUNBUFFERED=1 \
 
 # Health check to verify bio packages are installed
 HEALTHCHECK --interval=60s --timeout=30s --start-period=10s --retries=3 \
-    CMD python3 -c "import openmm; import rdkit; from vina import Vina; print('BioLab OK')" || exit 1
+    CMD python3 -c "import openmm; import rdkit; from vina import Vina; from Bio import SeqIO; print('BioLab OK')" && \
+        blastn -version > /dev/null || exit 1
 
 # Default command
 CMD ["python3", "--version"]

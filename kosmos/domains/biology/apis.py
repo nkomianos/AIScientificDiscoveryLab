@@ -925,3 +925,251 @@ class PDBClient:
     def close(self):
         """Close HTTP client."""
         self.client.close()
+
+
+class InsectBaseClient:
+    """
+    Client for InsectBase database (http://www.insectbase.org/).
+    
+    InsectBase provides transcriptome and genome data for insect species,
+    including essential gene annotations.
+    """
+    
+    BASE_URL = "http://www.insectbase.org/api/v1"
+    
+    def __init__(self, timeout: int = 30):
+        """Initialize InsectBase client."""
+        self.timeout = timeout
+        self.client = httpx.Client(timeout=timeout)
+    
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
+    def search_organism(self, organism_name: str) -> Optional[Dict[str, Any]]:
+        """
+        Search for organism by name.
+        
+        Args:
+            organism_name: Scientific or common name
+        
+        Returns:
+            Organism information dict or None
+        """
+        try:
+            url = f"{self.BASE_URL}/species/search"
+            params = {"q": organism_name}
+            
+            response = self.client.get(url, params=params)
+            
+            if response.status_code == 200:
+                return response.json()
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"InsectBase search error for {organism_name}: {e}")
+            return None
+    
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
+    def get_transcriptome(self, organism_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Download transcriptome data.
+        
+        Args:
+            organism_id: InsectBase organism ID
+        
+        Returns:
+            Transcriptome data dict or None
+        """
+        try:
+            url = f"{self.BASE_URL}/species/{organism_id}/transcriptome"
+            
+            response = self.client.get(url)
+            
+            if response.status_code == 200:
+                return response.json()
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"InsectBase transcriptome error for {organism_id}: {e}")
+            return None
+    
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
+    def get_essential_genes(
+        self, 
+        organism_id: str,
+        criteria: Optional[Dict] = None
+    ) -> Optional[List[Dict[str, Any]]]:
+        """
+        Get essential genes with lethality annotations.
+        
+        Args:
+            organism_id: InsectBase organism ID
+            criteria: Optional filtering criteria
+        
+        Returns:
+            List of essential genes or None
+        """
+        try:
+            url = f"{self.BASE_URL}/species/{organism_id}/essential_genes"
+            
+            response = self.client.get(url, params=criteria or {})
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "genes" in data:
+                    return data["genes"]
+                return []
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"InsectBase essential genes error for {organism_id}: {e}")
+            return None
+    
+    def close(self):
+        """Close HTTP client."""
+        self.client.close()
+
+
+class NCBIGenomicsClient:
+    """
+    Client for NCBI genomics databases (GenBank, RefSeq).
+    
+    Uses Entrez API to search for organism genomes and transcriptomes.
+    """
+    
+    def __init__(self, email: str = "kosmos@example.com", api_key: Optional[str] = None, timeout: int = 30):
+        """
+        Initialize NCBI Genomics client.
+        
+        Args:
+            email: Email address (required by NCBI)
+            api_key: Optional NCBI API key for higher rate limits
+            timeout: Request timeout
+        """
+        self.email = email
+        self.api_key = api_key
+        self.timeout = timeout
+        
+        # Configure Entrez (if biopython is available)
+        try:
+            from Bio import Entrez
+            Entrez.email = email
+            if api_key:
+                Entrez.api_key = api_key
+        except ImportError:
+            logger.warning("Biopython not available. NCBI client functionality limited.")
+    
+    def search_genome(self, organism_name: str) -> Optional[List[str]]:
+        """
+        Search for genome assembly IDs.
+        
+        Args:
+            organism_name: Scientific name of organism
+        
+        Returns:
+            List of assembly IDs or None
+        """
+        try:
+            from Bio import Entrez
+            
+            # Search assembly database
+            search_term = f'"{organism_name}"[Organism]'
+            handle = Entrez.esearch(db="assembly", term=search_term, retmax=10)
+            record = Entrez.read(handle)
+            handle.close()
+            
+            return record.get("IdList", [])
+            
+        except ImportError:
+            logger.error("Biopython not available for NCBI operations")
+            return None
+        except Exception as e:
+            logger.error(f"NCBI genome search error for {organism_name}: {e}")
+            return None
+    
+    def download_transcriptome(self, assembly_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Download transcriptome sequences.
+        
+        Args:
+            assembly_id: NCBI assembly ID
+        
+        Returns:
+            Dict with transcriptome data or None
+        """
+        try:
+            from Bio import Entrez, SeqIO
+            
+            # Get assembly summary
+            handle = Entrez.esummary(db="assembly", id=assembly_id)
+            summary = Entrez.read(handle)
+            handle.close()
+            
+            if not summary or "DocumentSummarySet" not in summary:
+                return None
+            
+            # Extract FTP path
+            doc_sum = summary["DocumentSummarySet"]["DocumentSummary"][0]
+            ftp_path = doc_sum.get("FtpPath_RefSeq") or doc_sum.get("FtpPath_GenBank")
+            
+            if not ftp_path:
+                return None
+            
+            # Download transcriptome
+            # In production, this would download and parse the actual files
+            # For now, return metadata
+            return {
+                "assembly_id": assembly_id,
+                "organism": doc_sum.get("Organism"),
+                "ftp_path": ftp_path,
+                "status": "available",
+            }
+            
+        except ImportError:
+            logger.error("Biopython not available for NCBI operations")
+            return None
+        except Exception as e:
+            logger.error(f"NCBI transcriptome download error for {assembly_id}: {e}")
+            return None
+    
+    def get_gene_sequences(self, gene_ids: List[str]) -> Optional[Dict[str, str]]:
+        """
+        Get gene sequences by ID.
+        
+        Args:
+            gene_ids: List of NCBI gene IDs
+        
+        Returns:
+            Dict mapping gene_id to sequence or None
+        """
+        try:
+            from Bio import Entrez, SeqIO
+            
+            sequences = {}
+            
+            # Fetch sequences in batches
+            batch_size = 100
+            for i in range(0, len(gene_ids), batch_size):
+                batch = gene_ids[i:i + batch_size]
+                
+                handle = Entrez.efetch(
+                    db="nucleotide",
+                    id=",".join(batch),
+                    rettype="fasta",
+                    retmode="text"
+                )
+                
+                for record in SeqIO.parse(handle, "fasta"):
+                    sequences[record.id] = str(record.seq)
+                
+                handle.close()
+            
+            return sequences
+            
+        except ImportError:
+            logger.error("Biopython not available for NCBI operations")
+            return None
+        except Exception as e:
+            logger.error(f"NCBI gene sequence fetch error: {e}")
+            return None
