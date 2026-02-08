@@ -21,25 +21,56 @@ The system runs autonomous research cycles, generating tasks, executing analyses
 
 ## Virtual BioLab Adaptation
 
-This repository includes a **Virtual BioLab** extension that transforms Kosmos into a computational drug discovery platform. The BioLab adds three specialized instruments for the full drug discovery loop:
+This repository includes a **Virtual BioLab** extension that transforms Kosmos into a computational drug discovery platform. The BioLab adds specialized instruments for multiple research domains:
+
+### Drug Discovery Tools
 
 1. **Structure Prediction** - Predict 3D protein structures from amino acid sequences using ESMFold
 2. **Molecular Docking** - Dock small molecules to protein targets using AutoDock Vina
 3. **Molecular Dynamics** - Simulate protein/complex stability using OpenMM
 
+### RNAi (interference) Designer Tools
+
+The BioLab now includes **RNAi Designer** capabilities for autonomous design of eco-friendly gene-silencing agents for pest control. This enables Kosmos agents to:
+
+1. **Find Essential Genes** (`find_essential_genes`) - Identifies essential genes in pest organisms via homology mapping against Drosophila Essential Genes (DEG) database
+2. **Generate SiRNA Candidates** (`generate_sirna_candidates`) - Converts long gene sequences (3000bp+) into valid 21-mer siRNA candidates using Reynolds Rules for efficacy prediction
+3. **Check Off-Target Risk** (`check_off_target_risk`) - Validates RNAi sequences against protected species genomes (honeybees, monarch butterflies) using BLAST search
+
+**RNAi Designer Workflow:**
+```
+Find Essential Genes → Generate SiRNA Candidates → Validate Safety → Approved RNAi Agents
+```
+
+**Key Features:**
+- **Homology-Based Essentiality Detection** - Solves the "no lethality metadata" problem by mapping pest genes to well-characterized Drosophila essential genes
+- **Reynolds Rules Implementation** - Automated siRNA design following established design criteria (GC content, homopolymer detection, thermodynamic stability)
+- **Safety-First Approach** - BLAST validation ensures RNAi agents don't harm beneficial insects
+- **Volume-Mounted Genomes** - Protected species genomes stored on host (not in Docker image) to prevent 5GB+ image bloat
+
+See [`docs/rnai-designer-implementation.md`](docs/rnai-designer-implementation.md) for complete documentation and [`examples/rnai_designer_example.py`](examples/rnai_designer_example.py) for usage examples.
+
 ### BioLab Features
 
-- **Specialized Docker Environment** (`kosmos-biolab:latest`) with all computational biology dependencies pre-installed
-- **High-Level Tool Functions** in `kosmos/tools/bio_lab.py` that handle file I/O automatically
-- **Agent Integration** - LLM agents are aware of these capabilities and can design drug discovery experiments
-- **Discovery Loop Workflow** - Agents follow: Predict Structure → Dock Molecules → Simulate Stability → Analyze Results
+- **Specialized Docker Environment** (`kosmos-biolab:latest`) with all computational biology dependencies pre-installed (including BLAST+ for RNAi tools)
+- **High-Level Tool Functions** in `kosmos/tools/bio_lab.py` and `kosmos/tools/rnai_designer.py` that handle file I/O automatically
+- **Agent Integration** - LLM agents are aware of these capabilities and can design drug discovery and RNAi experiments autonomously
+- **Discovery Loop Workflows**:
+  - Drug Discovery: Predict Structure → Dock Molecules → Simulate Stability → Analyze Results
+  - RNAi Design: Find Essential Genes → Generate Candidates → Validate Safety → Select Best Agents
 
-The BioLab tools are designed to be called by the AI scientist agent within the Docker sandbox, enabling autonomous computational drug discovery experiments. See [`kosmos/tools/bio_lab.py`](kosmos/tools/bio_lab.py) for implementation details.
+The BioLab tools are designed to be called by the AI scientist agent within the Docker sandbox, enabling autonomous computational biology experiments. See [`kosmos/tools/bio_lab.py`](kosmos/tools/bio_lab.py) and [`kosmos/tools/rnai_designer.py`](kosmos/tools/rnai_designer.py) for implementation details.
 
 **Building the BioLab Image:**
 ```bash
 cd docker/sandbox
 docker build -t kosmos-biolab:latest -f Dockerfile.biolab .
+```
+
+**Running RNAi Designer Example:**
+```bash
+docker run -v ./kosmos_data:/data -v ./examples:/workspace kosmos-biolab:latest \
+    python3 /workspace/rnai_designer_example.py
 ```
 
 ## Quick Start
@@ -128,6 +159,7 @@ kosmos doctor
 | Literature Search | ArXiv, PubMed, Semantic Scholar integration | Complete |
 | Code Execution | Docker-sandboxed Jupyter notebooks | Complete |
 | Virtual BioLab | Computational drug discovery tools (structure prediction, docking, MD) | Complete |
+| RNAi Designer | Autonomous design of gene-silencing agents for pest control | Complete |
 | Knowledge Graph | Neo4j-based relationship storage (optional) | Complete |
 | Context Compression | Query-based hierarchical compression (20:1 ratio) | Complete |
 | Discovery Validation | 8-dimension ScholarEval quality framework | Complete |
@@ -284,10 +316,18 @@ kosmos/
 ├── compression/      # Context compression (20:1 ratio)
 ├── core/             # LLM providers, metrics, configuration
 │   └── providers/    # Anthropic, OpenAI, LiteLLM with async support
+├── domains/          # Domain-specific knowledge and APIs
+│   └── biology/      # Biology domain modules
+│       ├── apis.py   # API clients (KEGG, NCBI, InsectBase, etc.)
+│       └── genomics/ # Genomics tools (essential genes, RNAi, BLAST)
 ├── execution/        # Docker-based sandboxed code execution
 ├── knowledge/        # Neo4j knowledge graph (1,025 lines)
 ├── literature/       # ArXiv, PubMed, Semantic Scholar clients
 ├── orchestration/    # Plan creation/review, task delegation
+├── tools/            # High-level tool functions for agents
+│   ├── bio_lab.py   # Drug discovery tools (structure, docking, MD)
+│   ├── rnai_designer.py    # RNAi design tools (essential genes, safety)
+│   └── rnai_generator.py   # SiRNA candidate generation
 ├── validation/       # ScholarEval 8-dimension quality framework
 ├── workflow/         # Main research loop integration
 └── world_model/      # State management, JSON artifacts
@@ -371,6 +411,9 @@ The system is suitable for experimentation and further development. Before produ
 ### Current Status
 - [archive/PAPER_IMPLEMENTATION_GAPS.md](archive/PAPER_IMPLEMENTATION_GAPS.md) - Paper implementation gaps (17/17 complete)
 - [docs/DEBUG_MODE.md](docs/DEBUG_MODE.md) - Debug mode guide
+- [docs/rnai-designer-implementation.md](docs/rnai-designer-implementation.md) - RNAi Designer complete implementation guide
+- [docs/rnai-designer-quick-start.md](docs/rnai-designer-quick-start.md) - RNAi Designer quick start guide
+- [docs/rnai-designer-architecture.md](docs/rnai-designer-architecture.md) - RNAi Designer architecture and data flow
 
 ### Archived Analysis
 - [archive/120525_implementation_gaps_v2.md](archive/120525_implementation_gaps_v2.md) - Original implementation gaps analysis
@@ -412,6 +455,7 @@ Areas where contributions would be useful:
 - Performance benchmarking with production LLMs
 - Validation studies to measure actual accuracy
 - Multi-tenancy and user isolation
+- RNAi Designer enhancements (secondary structure prediction, ML-based efficacy prediction, multi-target design)
 
 ## License
 
@@ -419,4 +463,16 @@ MIT License
 
 ---
 
-**Version**: 0.2.0-alpha | **Tests**: 3704 passing | **Last Updated**: 2025-12-09
+**Version**: 0.2.0-alpha | **Tests**: 3704 passing | **Last Updated**: 2026-02-08
+
+### Recent Updates
+
+**February 2026 - RNAi Designer Implementation**
+- Added three RNAi Designer tools for autonomous pest control agent design
+- Implemented homology-based essential gene identification
+- Added Reynolds Rules-based siRNA candidate generation
+- Integrated BLAST-based safety validation for protected species
+- Extended BioLab Docker image with BLAST+ and genomics tools
+- Added comprehensive tests and documentation
+
+See [RNAI_IMPLEMENTATION_SUMMARY.md](RNAI_IMPLEMENTATION_SUMMARY.md) for complete details.
